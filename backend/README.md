@@ -28,7 +28,7 @@ python -m venv .venv
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 .\.venv\Scripts\python.exe -m flask --app app:create_app db upgrade
 .\.venv\Scripts\python.exe -m flask --app app:create_app seed-checklist
-.\.venv\Scripts\python.exe -m flask --app app:create_app run --host 127.0.0.1 --port 5000
+.\.venv\Scripts\python.exe -m flask --app app:create_app run --host 127.0.0.1 --port 6767
 ```
 
 Существующий `.env` содержит подписанный `FREEDOM_API_URL`, не перезаписывайте его. Рабочая SQLite — `database/database.db`. Запуск приложения не делает сетевые запросы и не создаёт демонстрационные данные. `seed-checklist` повторяем и не перезаписывает существующую версию.

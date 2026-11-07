@@ -5,5 +5,5 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
-EXPOSE 5000
+EXPOSE 6767
 CMD ["/app/entrypoint.sh"]
