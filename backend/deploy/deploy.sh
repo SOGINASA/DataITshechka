@@ -59,15 +59,17 @@ on_error() {
 trap on_error ERR
 
 echo "Deploying backend revision $target"
-# Build before interrupting traffic. PostgreSQL is never recreated by this script.
-"${compose[@]}" build backend
-"${compose[@]}" up -d --no-recreate --wait --wait-timeout 120 postgres
-
+# Keep the running image reachable before BuildKit replaces its latest tag.
+# With the containerd image store, its untagged index can otherwise disappear.
 container=$("${compose[@]}" ps -aq backend)
 if [[ -n "$container" ]]; then
   old_image=$(docker inspect --format '{{.Image}}' "$container")
   docker tag "$old_image" bimbombam-backend:previous
 fi
+
+# Build before interrupting traffic. PostgreSQL is never recreated by this script.
+"${compose[@]}" build backend
+"${compose[@]}" up -d --no-recreate --wait --wait-timeout 120 postgres
 
 # Stop writes before the snapshot so the backup represents pre-migration state.
 "${compose[@]}" stop -t 60 backend

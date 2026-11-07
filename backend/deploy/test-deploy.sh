@@ -53,7 +53,11 @@ run_deploy
 test "$(cat .deploy/deployed-revision)" = "$(git rev-parse HEAD)"
 test "$(find .deploy/backups -name '*.dump' | wc -l)" -eq 1
 grep -q 'up .*--force-recreate.*backend' "$MOCK_LOG"
+tag_line=$(grep -n '^tag ' "$MOCK_LOG" | head -1 | cut -d: -f1)
+build_line=$(grep -n 'build backend' "$MOCK_LOG" | head -1 | cut -d: -f1)
+test "$tag_line" -lt "$build_line"
 echo 'PASS: initial deployment, backup, readiness and revision'
+echo 'PASS: running image retained before build replaces its tag'
 
 : > "$MOCK_LOG"
 run_deploy
