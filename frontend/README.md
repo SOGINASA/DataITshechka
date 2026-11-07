@@ -1,46 +1,65 @@
-# Getting Started with Create React App
+# Freedom CQA
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Фронтенд рабочего места контроля качества: дэшборд, поиск и фильтры диалогов, транскрипт с доказательствами, версии чек-листа, апелляции и решения проверяющего.
 
-## Available Scripts
+## Стек
 
-In the project directory, you can run:
+**TypeScript + Tailwind CSS + обычный DOM.** React, Zustand и UI-фреймворки не используются. TypeScript компилируется в JavaScript, Tailwind — в CSS. Папка `dist/` содержит только статические HTML, CSS, JS и локальные ассеты; сборщик модулей и серверный runtime для размещения не нужны.
 
-### `npm start`
+## Запуск
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Требуется Node.js 20+.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```sh
+npm ci
+npm start
+```
 
-### `npm test`
+Откройте http://localhost:3000. Изменения в `src/`, `css/`, `assets/` и `index.html` автоматически пересобираются. При ошибке TypeScript dev-сервер продолжает показывать последнюю успешную сборку, а ошибка выводится в терминале.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```sh
+npm run build
+npm test
+```
 
-### `npm run build`
+Для просмотра готовой статической сборки:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```sh
+cd dist
+python3 -m http.server 8080
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Размещайте содержимое `dist/` на любом статическом хостинге. Ресурсы подключены относительными путями, навигация использует hash, поэтому возможен деплой в подпапку и последующая адаптация для HTML-компонента Dynamics 365.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Возможности демо
 
-### `npm run eject`
+- Главная страница без регистрации и входа.
+- 18 мок-диалогов на RU/KZ/EN, часть с оценками и апелляциями.
+- Поиск, фильтры, пустая выдача, карточка разговора, ссылки из обоснований на реплики.
+- Начальная конфигурация из `case/CQA_Chat_Quality_Checklist 1.pdf`: 8 критериев, официальные веса, дискретные ступени и условия N/A.
+- Нормализация шкал, перераспределение веса при N/A и округление итога до двух знаков. Грубые ошибки — отдельный флаг, который не обнуляет результат.
+- Редактор названий, формулировок, секций, весов, типов, ступеней, описаний ступеней и условий N/A. Новая конфигурация сохраняется отдельной версией; существующие оценки хранят собственный снимок правил.
+- Подача апелляции, подтверждение или изменение ответа с обязательным обоснованием, исходная и финальная оценки, сохранённая история решений.
+- Повторная оценка создаёт новую ревизию: старые результаты и апелляции остаются доступны через выбор версии оценки.
+- Импорт JSON-файла или вставленного JSON в формате массива записей либо ответа организаторов `{ data: { records: [...] } }`. Есть валидация, защита от дубликатов и небезопасных URL аудио.
+- Сохранение данных в localStorage этого браузера. Это не многопользовательское хранилище.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Границы реализации
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Оценивание пока является явно обозначенной локальной симуляцией. AI-анализ не подключён.** Демо не предназначено для контрольного набора и сравнения с Ground Truth. Функцию `createDemoEvaluation` в `src/data.ts` нужно заменить адаптером backend-сервиса, который принимает новый транскрипт и снимок выбранного чек-листа и возвращает реальные оценки/доказательства.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Официальный документ описывает качество чатов. Карточки звонков показывают интерфейс транскрипта и аудио; применение той же схемы к звонкам в демо служит только для демонстрации UI. Мок-записи не содержат аудиофайлов, поэтому интерфейс сообщает об отсутствии записи. Импортированный HTTP(S) `audio_url` воспроизводится нативным плеером; переход к реплике также перематывает загруженное аудио относительно первой ISO-метки.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Порог «Требуют внимания» ниже 80 и графический ориентир 85 — ориентиры демоинтерфейса, не пороги организаторов. Секции показывают вклад в общий результат после перераспределения N/A, а не придуманную отдельную формулу секционной оценки.
 
-## Learn More
+URL API и его подпись не включены в клиентский код. Для реальных данных/оценок нужен backend-адаптер. После изменения чек-листа старые результаты не пересчитываются автоматически: выберите новую версию и запустите новую оценку.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Ассеты
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Официальный логотип Freedom: https://fbroker.kz/images/Logo.svg (сохранён локально, пропорции сохранены).
+- Шрифт Inter: локальные Latin/Cyrillic/Cyrillic Extended WOFF2 из `@fontsource/inter`, лицензия в `assets/fonts/LICENSE`.
+- Иконки: небольшие SVG, написанные в `src/ui.ts`, без внешней библиотеки.
+
+## Структура
+
+`src/app.ts` — DOM и обработчики; `src/views.ts`, `src/overview.ts`, `src/ui.ts` — представления; `src/state.ts` — состояние и localStorage; `src/types.ts` — типы; `src/checklist.ts` — официальная конфигурация; `src/scoring.ts` — расчёт; `src/import.ts` — валидация импорта; `css/styles.css` — Tailwind и стили интерфейса.
