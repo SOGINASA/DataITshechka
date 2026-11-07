@@ -10,6 +10,22 @@ from ml2.provider import grammar_schema, Ollama, Settings, ModelError
 
 
 class RunTests(unittest.TestCase):
+    def test_qwen_sampling_defaults_and_truncation_diagnostics(self):
+        provider = Ollama(Settings())
+        response = {'done': True, 'done_reason': 'length', 'eval_count': 4096,
+                    'message': {'content': '{"results":', 'thinking': 'private model trace'}}
+        with patch.object(provider, '_request', return_value=response) as request:
+            with self.assertRaises(ModelError) as caught:
+                provider.complete([], {})
+        opts = request.call_args.args[1]['options']
+        self.assertEqual((opts['temperature'], opts['top_p'], opts['top_k'], opts['min_p']), (.6, .95, 20, 0))
+        self.assertEqual(caught.exception.code, 'generation_limit')
+        self.assertEqual(caught.exception.details['usage']['eval_count'], 4096)
+        self.assertNotIn('private model trace', str(caught.exception.details))
+        self.assertNotIn('content', caught.exception.details)
+        for kwargs in ({'temperature': float('nan')}, {'top_p': 0}, {'top_k': True}, {'min_p': -1}):
+            with self.assertRaises(ModelError): Ollama(Settings(**kwargs))
+
     def test_thinking_setting_is_explicit_and_sent_to_transport(self):
         self.assertTrue(Settings.parse_think('true'))
         self.assertFalse(Settings.parse_think('false'))
@@ -29,12 +45,13 @@ class RunTests(unittest.TestCase):
         raw['results'][1].update(status='not_applicable', value=None)
         raw['results'][3].update(status='needs_review', value=None)
         raw['results'][-1].update(status='fail', value=True)
-        decoded = decode(wire_answers(raw), checklist)
-        self.assertEqual(decoded, raw)
+        decoded = decode(wire_answers(raw), checklist, dialog())
+        self.assertEqual([(r['status'], r['value']) for r in decoded['results']],
+                         [(r['status'], r['value']) for r in raw['results']])
         validate_results(decoded, checklist, dialog(), [])
         schema = schema_for(checklist, dialog(), [])
         self.assertEqual(set(schema['properties']['results']['required']), {c['id'] for c in checklist['criteria']})
-        self.assertEqual(schema['$defs']['assessment']['properties']['reviewed_range']['properties']['start_message_id']['enum'], ['m1', 'm2', 'm3'])
+        self.assertNotIn('reviewed_range', schema['$defs']['assessment']['properties'])
 
     def test_wire_decoding_never_repairs_an_illegal_grade(self):
         from ml2.decoding import decode
@@ -45,11 +62,11 @@ class RunTests(unittest.TestCase):
             raw = wire_answers()
             raw['results'][criterion]['answer'] = answer
             with self.assertRaises(ValueError):
-                validate_results(decode(raw, checklist), checklist, dialog(), [])
+                validate_results(decode(raw, checklist, dialog()), checklist, dialog(), [])
         raw = wire_answers()
         raw['results'].pop('contact')
         with self.assertRaises(ValueError):
-            decode(raw, checklist)
+            decode(raw, checklist, dialog())
 
     def test_resume_requires_same_inputs_and_preserves_results(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -104,7 +121,7 @@ class RunTests(unittest.TestCase):
             Evaluator(provider, read_json('ml2/configs/chat.json')).evaluate(dialog())
         fields = captured[0][1]['$defs']['assessment']['properties']
         self.assertEqual(fields['knowledge_status']['enum'], ['not_needed', 'missing'])
-        self.assertEqual(fields['reviewed_range']['type'], 'object')
+        self.assertNotIn('reviewed_range', fields)
         self.assertEqual(len(captured), 2)
         for messages, schema in captured:
             with patch.object(provider, '_request', return_value={

@@ -1,4 +1,16 @@
 import type { Conversation, Message } from "./types.js";
+
+export function detectLanguage(text: string): Conversation["language"] {
+  const normalized = text.toLocaleLowerCase();
+  if (/[әғқңөұүһәі]/i.test(normalized)) return "KZ";
+  const tokens = normalized.match(/[\p{L}]+/gu) || [];
+  const kazakh = new Set(["иә", "сіз", "сізге", "маған", "қайда", "қалай", "үшін", "және", "рақмет", "өтінім", "өшірдім", "қосыңызшы"]);
+  if (tokens.some((token) => kazakh.has(token))) return "KZ";
+  if (/[а-яё]/i.test(normalized)) return "RU";
+  if (/[a-z]/i.test(normalized)) return "EN";
+  return "RU";
+}
+
 export function parseImport(raw: string): Conversation[] {
   let parsed: any;
   try {
@@ -10,7 +22,7 @@ export function parseImport(raw: string): Conversation[] {
   }
   const records = Array.isArray(parsed)
     ? parsed
-    : (parsed?.data?.records ?? parsed?.records);
+    : (parsed?.messages || parsed?.transcript ? [parsed] : parsed?.data?.records ?? parsed?.records);
   if (!Array.isArray(records) || records.length === 0)
     throw new Error(
       "Нужен непустой массив записей или ответ API с полем data.records.",
@@ -23,22 +35,22 @@ export function parseImport(raw: string): Conversation[] {
       throw new Error(`Запись ${index + 1}: ${detail}`);
     };
     if (
-      typeof record?.conversation_id !== "string" ||
-      !record.conversation_id.trim()
+      typeof (record?.conversation_id ?? record?.external_id) !== "string" ||
+      !(record.conversation_id ?? record.external_id).trim()
     )
       fail("нет conversation_id.");
-    const id = record.conversation_id.trim();
+    const id = (record.conversation_id ?? record.external_id).trim();
     if (ids.has(id)) fail(`ID «${id}» повторяется в файле.`);
     ids.add(id);
-    if (!["RU", "KZ", "EN"].includes(record.language))
-      fail("language должен быть RU, KZ или EN.");
-    if (!["agent chat", "voice call"].includes(record.channel))
-      fail("channel должен быть agent chat или voice call.");
-    if (!Array.isArray(record.transcript) || !record.transcript.length)
-      fail("transcript должен содержать хотя бы одну реплику.");
-    const transcript: Message[] = record.transcript.map(
+    const channel = ({chat: "agent chat", call: "voice call"} as Record<string, Conversation["channel"]>)[record.channel] || record.channel;
+    if (!["agent chat", "voice call"].includes(channel))
+      fail("channel должен быть chat, call, agent chat или voice call.");
+    const messages = record.transcript ?? record.messages;
+    if (!Array.isArray(messages) || !messages.length)
+      fail("transcript или messages должны содержать хотя бы одну реплику.");
+    const transcript: Message[] = messages.map(
       (
-        m: { text: unknown; timestamp: unknown; speaker: string },
+        m: { id?: unknown; text: unknown; timestamp: unknown; speaker: string },
         i: number,
       ) => {
         if (
@@ -50,12 +62,19 @@ export function parseImport(raw: string): Conversation[] {
         )
           fail(`проверьте timestamp, speaker и text у реплики ${i + 1}.`);
         return {
+          ...(typeof m.id === "string" ? {id: m.id} : {}),
           timestamp: m.timestamp as string,
           speaker: m.speaker as Message["speaker"],
           text: m.text as string,
         };
       },
     );
+    const normalizedLanguage = ({ru: "RU", kk: "KZ", kz: "KZ", en: "EN"} as Record<string, Conversation["language"]>)[String(record.language || "").toLowerCase()];
+    const language = normalizedLanguage
+      ? normalizedLanguage
+      : [undefined, null, "", "auto"].includes(record.language)
+        ? detectLanguage(transcript.map((message) => message.text).join(" "))
+        : fail("language должен быть RU, KZ, EN или отсутствовать для автоопределения.");
     let audioUrl: string | null = null;
     if (typeof record.audio_url === "string" && record.audio_url.trim()) {
       try {
@@ -73,8 +92,8 @@ export function parseImport(raw: string): Conversation[] {
         typeof record.title === "string" ? record.title : "Загруженный диалог",
       operator:
         typeof record.operator === "string" ? record.operator : "Оператор",
-      channel: record.channel,
-      language: record.language,
+      channel,
+      language,
       date: new Date().toISOString(),
       duration: "—",
       transcript,

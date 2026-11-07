@@ -108,7 +108,8 @@ def run(args):
             except EvaluationFailure as exc:
                 failures += 1
                 result = {'conversation_id': dialog['conversation_id'], 'language': dialog['language'],
-                          'channel': dialog['channel'], 'status': 'error', 'error': str(exc), 'results': [],
+                          'channel': dialog['channel'], 'status': 'error', 'error': str(exc),
+                          'error_code': exc.code, 'results': [],
                           'provenance': {'conversation_hash': digest(dialog), 'rubric_hash': digest(checklist),
                             'elapsed_seconds': round(time.monotonic() - start, 3), 'attempts': exc.attempts}}
             result['provenance'].update(model_digest=identity['digest'], run_manifest_hash=digest(manifest))

@@ -12,6 +12,9 @@ class ContractError(ValueError):
     pass
 
 
+REVIEW_SCOPES = {'any_relevant_range', 'through_first_operator', 'full_conversation', 'closing_exchange'}
+
+
 def require(condition, message):
     if not condition:
         raise ContractError(message)
@@ -84,9 +87,14 @@ def rubric(raw):
         require(kind in ('binary', 'scale', 'flag'), 'Unsupported answer_type')
         item.update(answer_type=kind, weight=number(c.get('weight'), 'weight', 0, 100),
                     section=c.get('section', ''), allow_na=c.get('allow_na', False),
-                    na_condition=c.get('na_condition', ''), scale=deepcopy(c.get('scale', [])))
+                    na_condition=c.get('na_condition', ''), scale=deepcopy(c.get('scale', [])),
+                    review_scope=c.get('review_scope', 'any_relevant_range'),
+                    review_guide=c.get('review_guide', ''))
         require(type(item['allow_na']) is bool, 'allow_na: expected bool')
         require(isinstance(item['section'], str) and isinstance(item['na_condition'], str), 'Invalid criterion text')
+        require(item['review_scope'] in REVIEW_SCOPES, 'Invalid review_scope')
+        require(isinstance(item['review_guide'], str) and len(item['review_guide']) <= 1500,
+                'Invalid review_guide')
         if item['allow_na']:
             text(item['na_condition'], 'na_condition')
         if kind == 'flag':
@@ -212,12 +220,45 @@ def validate_results(raw, checklist, dialog, knowledge):
         require(all(isinstance(mid, str) and mid in messages for mid in mids), 'Nonexistent evidence ID')
         require(len(set(mids)) == len(mids), 'Duplicate evidence')
         span = item['reviewed_range']
+        require(span is not None, 'Every criterion requires a reviewed_range')
         if span is not None:
             require(isinstance(span, dict) and set(span) == {'start_message_id', 'end_message_id'}, 'Invalid range shape')
             a, b = span['start_message_id'], span['end_message_id']
             require(isinstance(a, str) and isinstance(b, str) and a in positions and b in positions, 'Nonexistent range ID')
             require(positions[a] <= positions[b], 'Reversed range')
+            start, end = positions[a], positions[b]
+            require(all(start <= positions[mid] <= end for mid in mids),
+                    'Evidence falls outside reviewed_range')
+            operators = [i for i, message in enumerate(dialog['messages']) if message['speaker'] == 'operator']
+            scope = c['review_scope']
+            if scope == 'full_conversation':
+                require(start == 0 and end == len(dialog['messages']) - 1,
+                        'This criterion requires reviewing the full conversation')
+            elif scope == 'through_first_operator' and operators:
+                require(start == 0 and end >= operators[0],
+                        'This criterion requires the conversation through the first operator response')
+            elif scope == 'closing_exchange' and operators:
+                last_operator = operators[-1]
+                last_client = next((i for i in range(last_operator - 1, -1, -1)
+                                    if dialog['messages'][i]['speaker'] == 'client'), None)
+                previous_operator = next((i for i in range((last_client if last_client is not None else last_operator) - 1,
+                                                           -1, -1)
+                                          if dialog['messages'][i]['speaker'] == 'operator'), None)
+                expected_start = previous_operator if previous_operator is not None else (
+                    last_client if last_client is not None else last_operator)
+                require(start <= expected_start and end == len(dialog['messages']) - 1,
+                        'This criterion requires reviewing the final customer/operator exchange')
         require(bool(mids) or span is not None, 'Every decision needs evidence or inspected range')
+        needs_direct_citation = c['answer_type'] == 'scale' or (
+            c['answer_type'] == 'flag' and value is True) or (
+            c['answer_type'] == 'binary' and value is True)
+        if status not in ('not_applicable', 'needs_review') and needs_direct_citation:
+            require(bool(mids), 'Positive decisions require criterion-specific evidence')
+            require(any(messages[mid]['speaker'] == 'operator' for mid in mids),
+                    'Criterion evidence must include an operator message')
+        if c['review_scope'] == 'closing_exchange' and value is True:
+            require(bool(operators) and dialog['messages'][operators[-1]]['id'] in mids,
+                    'A successful closing must cite the final operator message')
         # Negative claims need the inspected context, not an invented quotation of an absent action.
         absent = (c['answer_type'] == 'flag' and value is False) or (c['answer_type'] == 'binary' and value is False)
         require(not absent or span is not None, 'Missing action/violation requires reviewed_range')

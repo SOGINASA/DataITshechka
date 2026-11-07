@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ML2 — проверка диалога</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header class="topbar"><a class="brand" href="/">CQA <span>ML2</span></a><div id="model-status" class="model-status" role="status">Подключение к модели…</div></header>
+<main>
+  <div class="page-heading"><div><p class="eyebrow">Локальная проверка</p><h1>Как прошёл диалог?</h1><p class="intro">Вставьте переписку — получите оценку и обоснование по каждому критерию.</p></div></div>
+  <div class="workspace">
+    <section class="panel editor" aria-labelledby="input-title">
+      <div class="panel-heading"><h2 id="input-title">Диалог</h2><button id="example" class="text-button" type="button">Вставить пример</button></div>
+      <form id="evaluate-form"><fieldset id="input-fields">
+        <div class="controls">
+          <label>Формат<select id="format"><option value="text">Текст</option><option value="json">JSON</option></select></label>
+          <label>Язык<select id="language"><option value="ru">Русский</option><option value="kk">Қазақша</option><option value="en">English</option></select></label>
+          <label>Канал<select id="channel"><option value="chat">Чат</option><option value="call">Звонок</option></select></label>
+        </div>
+        <label for="source" class="sr-only">Текст диалога или JSON</label>
+        <textarea id="source" rows="13" spellcheck="false" required aria-describedby="format-help" placeholder="Клиент: Здравствуйте! Где найти историю операций?&#10;Оператор: Здравствуйте! Меня зовут Алина…"></textarea>
+        <p id="format-help" class="help">Каждую реплику начинайте с «Клиент:», «Оператор:», «Бот:» или «Система:».</p>
+        <label class="check" id="truncated-label" hidden><input id="truncated" type="checkbox">Известно, что начало записи обрезано</label>
+        <div class="editor-actions"><label class="file-button" for="file-input">Загрузить диалог<input id="file-input" type="file" accept=".txt,.json,text/plain,application/json"></label><button id="submit" class="primary" type="submit" disabled>Оценить диалог <span aria-hidden="true">↗</span></button></div>
+        <div class="knowledge-controls"><label class="file-button" for="knowledge-file-input">Подключить официальную базу знаний<input id="knowledge-file-input" type="file" accept=".json,application/json"></label><span id="knowledge-file-name" class="help">База знаний не подключена</span></div>
+        <label class="knowledge-date" for="knowledge-as-of">Дата диалога для источников со сроком действия<input id="knowledge-as-of" type="date"></label>
+      </fieldset></form>
+      <p id="form-error" class="error-message" role="alert" hidden></p>
+      <p class="footnote">Диалог и подключённая база остаются на этом компьютере. Без официального источника существенные внешние факты потребуют ручной проверки.</p>
+    </section>
+    <section class="panel output" aria-labelledby="result-title">
+      <div class="panel-heading"><h2 id="result-title">Оценка качества</h2><button id="download" class="text-button" type="button" hidden>Скачать JSON ↓</button></div>
+      <div id="progress" class="progress" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><div><strong id="progress-title">Модель анализирует диалог</strong><p id="progress-detail">Обычно это занимает 2–5 минут.</p></div><span id="elapsed" class="elapsed" aria-hidden="true">0:00</span></div>
+      <div id="result"><div class="empty"><svg viewBox="0 0 48 48" width="56" height="56" fill="none" aria-hidden="true"><rect x="9" y="5" width="30" height="38" rx="5" stroke="currentColor" stroke-width="1.5"/><path d="m15 17 3 3 6-6M28 17h5M15 28h18M15 34h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Здесь появится результат</h3><p>8 критериев, общий балл и реплики,<br>на которых основана оценка.</p></div></div>
+    </section>
+  </div>
+  <section class="history" aria-labelledby="history-title"><div class="history-heading"><h2 id="history-title">Последние проверки</h2><button id="refresh" class="text-button" type="button">Обновить</button></div><div id="history-list"><p class="help">Проверок пока нет.</p></div></section>
+</main>
+<footer>ML2 · Экспериментальная оценка. Проверяйте обоснования перед принятием решения.</footer>
+<script src="/app.js" type="module"></script>
+</body></html>

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "corpus": "weak-cqa-v1",
+  "label_provenance": "programmatic labels from controlled synthetic behavior variants",
+  "not_human_gold": true,
+  "protected_dev_ids_used": 0,
+  "sources": [
+    "mangi-llm/kazakh-customer-support-qa (CC BY 4.0)",
+    "A11Sunday/support-json-ru (CC BY 4.0; train split only)"
+  ],
+  "seed_groups": {
+    "train": 108,
+    "valid": 20,
+    "test": 16
+  },
+  "counts": {
+    "train": 2176,
+    "valid": 320,
+    "test": 320
+  },
+  "variants": [
+    "baseline",
+    "contact_fail",
+    "needs_pass",
+    "needs_fail",
+    "consult_0",
+    "consult_5",
+    "consult_10",
+    "consult_15",
+    "empathy_fail",
+    "management_0",
+    "management_4",
+    "management_7",
+    "closing_fail",
+    "critical_violation",
+    "identification_fail",
+    "identification_pass"
+  ],
+  "warning": "Synthetic weak labels, template-shaped conversations; for pilot only. Do not claim as validated QA accuracy."
+}

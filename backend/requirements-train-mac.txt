@@ -1,0 +1,2 @@
+# MLX-LM SFT/LoRA training on Apple Silicon; pinned to the installed Mac stack.
+mlx-lm[train]==0.32.2

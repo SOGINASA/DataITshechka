@@ -63,6 +63,10 @@ class Config:
     OLLAMA_NUM_PREDICT_CALL = int(os.environ['OLLAMA_NUM_PREDICT_CALL']) if os.environ.get('OLLAMA_NUM_PREDICT_CALL') else None
     # None preserves the model default. Qwen3 local baseline uses false.
     OLLAMA_THINK = {'true': True, 'false': False, '': None}[os.environ.get('OLLAMA_THINK', '').lower()]
+    ASR_ENABLED = os.environ.get('ASR_ENABLED', 'false').lower() in ('1', 'true', 'yes')
+    ASR_MODEL = os.environ.get('ASR_MODEL', 'mlx-community/whisper-large-v3-turbo')
+    ASR_MAX_UPLOAD_BYTES = int(os.environ.get('ASR_MAX_UPLOAD_BYTES', str(25 * 1024 * 1024)))
+    ASR_MAX_DURATION_SECONDS = int(os.environ.get('ASR_MAX_DURATION_SECONDS', '1800'))
 
 
 class DevelopmentConfig(Config):

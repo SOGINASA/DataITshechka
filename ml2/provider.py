@@ -1,6 +1,7 @@
 """Bounded local Ollama client. Never downloads models, follows redirects or silently retries."""
 from dataclasses import asdict, dataclass
 import json
+import math
 import os
 import time
 from urllib import request, error
@@ -9,7 +10,10 @@ from .contracts import loads
 
 
 class ModelError(RuntimeError):
-    pass
+    def __init__(self, message, *, code='model_error', details=None):
+        super().__init__(message)
+        self.code = code
+        self.details = details or {}
 
 
 @dataclass(frozen=True)
@@ -17,17 +21,25 @@ class Settings:
     base_url: str = 'http://127.0.0.1:11434'
     model: str = 'qwen3:8b'
     context: int = 20480
-    output_tokens: int = 4096
+    output_tokens: int = 2048
     timeout: int = 600
     seed: int = 7
     think: bool = True
+    temperature: float = 0.6
+    top_p: float = 0.95
+    top_k: int = 20
+    min_p: float = 0.0
 
     @classmethod
     def environment(cls):
         return cls(os.getenv('ML2_OLLAMA_URL', cls.base_url), os.getenv('ML2_MODEL', cls.model),
                    int(os.getenv('ML2_CONTEXT', cls.context)), int(os.getenv('ML2_OUTPUT_TOKENS', cls.output_tokens)),
                    int(os.getenv('ML2_TIMEOUT', cls.timeout)), int(os.getenv('ML2_SEED', cls.seed)),
-                   cls.parse_think(os.getenv('ML2_THINK', 'true')))
+                   cls.parse_think(os.getenv('ML2_THINK', 'true')),
+                   float(os.getenv('ML2_TEMPERATURE', cls.temperature)),
+                   float(os.getenv('ML2_TOP_P', cls.top_p)),
+                   int(os.getenv('ML2_TOP_K', cls.top_k)),
+                   float(os.getenv('ML2_MIN_P', cls.min_p)))
 
     @staticmethod
     def parse_think(value):
@@ -46,6 +58,11 @@ class Settings:
             raise ModelError('Timeout must be 1..600 seconds')
         if type(self.think) is not bool:
             raise ModelError('think must be boolean')
+        for value, low, high in ((self.temperature, 0, 2), (self.top_p, .0001, 1), (self.min_p, 0, 1)):
+            if type(value) not in (int, float) or not math.isfinite(value) or not low <= value <= high:
+                raise ModelError('Invalid sampling settings')
+        if type(self.top_k) is not int or not 1 <= self.top_k <= 1000:
+            raise ModelError('Invalid top_k')
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -115,15 +132,27 @@ class Ollama:
         size = len(json.dumps({'messages': messages, 'format': wire_schema}, ensure_ascii=False,
                               separators=(',', ':')).encode())
         if size + cfg.output_tokens + 1024 > cfg.context:
-            raise ModelError('Context budget exceeded; increase ML2_CONTEXT or use a fitting model; input unchanged')
+            input_limit = cfg.context - cfg.output_tokens - 1024
+            raise ModelError(f'Контекст не вмещает запрос: примерно {size} байт при лимите входа '
+                             f'{input_limit} байт (контекст {cfg.context}, запас на ответ {cfg.output_tokens}). '
+                             'Увеличьте ML2_CONTEXT или сократите промпт/вход; диалог не обрезан.',
+                             code='context_budget_exceeded',
+                             details={'request_bytes': size, 'input_budget_bytes': input_limit,
+                                      'context': cfg.context, 'output_reserve': cfg.output_tokens,
+                                      'safety_margin_bytes': 1024})
         result = self._request('/api/chat', {'model': cfg.model, 'stream': False, 'think': cfg.think,
             'keep_alive': '5m', 'format': wire_schema, 'messages': messages,
-            'options': {'temperature': 0, 'seed': cfg.seed, 'num_ctx': cfg.context, 'num_predict': cfg.output_tokens}})
+            'options': {'temperature': cfg.temperature, 'top_p': cfg.top_p, 'top_k': cfg.top_k,
+                        'min_p': cfg.min_p, 'seed': cfg.seed, 'num_ctx': cfg.context, 'num_predict': cfg.output_tokens}})
+        usage = {k: result[k] for k in ('prompt_eval_count', 'eval_count', 'total_duration', 'load_duration')
+                 if type(result.get(k)) is int and result[k] >= 0}
         if result.get('done') is not True or result.get('done_reason') == 'length':
-            raise ModelError('Generation incomplete; no partial success saved')
+            limit = result.get('done_reason') == 'length'
+            message = f'Model reached output limit ({cfg.output_tokens} tokens); no partial assessment saved' if limit else 'Model generation did not finish; no partial assessment saved'
+            raise ModelError(message, code='generation_limit' if limit else 'generation_incomplete',
+                             details={'done_reason': result.get('done_reason'), 'output_token_limit': cfg.output_tokens,
+                                      'usage': usage})
         content = result.get('message', {}).get('content')
         if not isinstance(content, str):
             raise ModelError('No model content')
-        usage = {k: result[k] for k in ('prompt_eval_count', 'eval_count', 'total_duration', 'load_duration')
-                 if type(result.get(k)) is int and result[k] >= 0}
         return content, usage

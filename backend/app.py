@@ -41,6 +41,7 @@ def create_app(config_object=None):
     from routes.workspace import workspace_bp
     app.register_blueprint(workspace_bp, url_prefix='/api/workspace')
     from services.ollama import AssessmentError
+    from services.transcription import TranscriptionError
     from services.freedom import IntegrationError, ImportConflict
 
     @app.errorhandler(IntegrationError)
@@ -53,12 +54,18 @@ def create_app(config_object=None):
         return jsonify({'error': {'code': 'assessment_unavailable' if error.status == 503 else 'invalid_assessment',
                                  'message': str(error)}}), error.status
 
+    @app.errorhandler(TranscriptionError)
+    def transcription_error(error):
+        return jsonify({'error': {'code': 'transcription_unavailable' if error.status == 503 else 'invalid_audio',
+                                 'message': str(error)}}), error.status
+
     @app.get('/api')
     def api_info():
         return jsonify({'name': 'CQA — анализ качества диалогов', 'version': '1.1.0',
                         'authentication': 'none', 'languages': ['ru', 'kk', 'en'],
                         'evaluation_engine': 'keyword-baseline-v1',
                         'evaluation_engines': ['baseline', 'ollama'], 'ollama_configured': bool(app.config['OLLAMA_MODEL']),
+                        'transcription_engine': 'mlx-whisper-local' if app.config['ASR_ENABLED'] else None,
                         'openapi': '/api/openapi.json'})
 
     @app.get('/api/health')
