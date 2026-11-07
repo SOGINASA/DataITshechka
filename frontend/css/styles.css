@@ -3870,3 +3870,11 @@ a.stat-item:hover strong {
     transition: none !important;
   }
 }
+.audio-import { margin: 0 0 1.25rem; padding: 1rem; border: 1px solid var(--border, #d8dee8); border-radius: 12px; background: var(--surface-subtle, #f8fafc); }
+.audio-import > summary { cursor: pointer; font-weight: 650; }
+.audio-import form { display: grid; gap: .75rem; margin-top: 1rem; }
+.asr-editor { display: grid; gap: .75rem; margin-top: 1rem; }
+.asr-turn { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: .5rem .75rem; align-items: center; padding: .75rem; border: 1px solid var(--border, #d8dee8); border-radius: 10px; background: var(--surface, white); }
+.asr-turn label { font-size: .875rem; font-weight: 600; }
+.asr-turn textarea { grid-column: 1 / -1; width: 100%; resize: vertical; }
+@media (max-width: 600px) { .asr-turn { grid-template-columns: 1fr; } .asr-turn textarea { grid-column: auto; } }

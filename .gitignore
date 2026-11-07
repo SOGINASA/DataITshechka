@@ -19,6 +19,50 @@ CQA_Hackathon_Student_Guide_v3.pdf
 CQA_Chat_Quality_Checklist 1.pdf
 CQA_Student_Guide_Appendix_Results.pdf
 data/raw/*
+# Curated public data, generated training corpus, and the experimental adapter below
+# are committed intentionally. Keep any other local or private data ignored.
+data/public_sources/
+!data/public_sources/
+data/public_sources/*
+!data/public_sources/SOURCES.md
+!data/public_sources/CC-BY-4.0.txt
+!data/public_sources/mangi-kazakh-support/
+data/public_sources/mangi-kazakh-support/*
+!data/public_sources/mangi-kazakh-support/README.md
+!data/public_sources/mangi-kazakh-support/dataaqparatfullemes.jsonl
+!data/public_sources/mangi-kazakh-support/translations.ru-en.jsonl
+!data/public_sources/support-json-ru/
+data/public_sources/support-json-ru/*
+!data/public_sources/support-json-ru/README.md
+!data/public_sources/support-json-ru/LICENSE.txt
+!data/public_sources/support-json-ru/selected/
+data/public_sources/support-json-ru/selected/*
+!data/public_sources/support-json-ru/selected/train.parquet
+!data/public_sources/support-json-ru/selected/validation.parquet
+data/training/
+!data/training/
+data/training/*
+!data/training/weak-cqa-v1/
+data/training/weak-cqa-v1/*
+!data/training/weak-cqa-v1/train.jsonl
+!data/training/weak-cqa-v1/valid.jsonl
+!data/training/weak-cqa-v1/test.jsonl
+!data/training/weak-cqa-v1/manifest.json
+data/models/
+!data/models/
+data/models/*
+!data/models/qwen3-1.7b-weak-cqa-v1/
+data/models/qwen3-1.7b-weak-cqa-v1/*
+!data/models/qwen3-1.7b-weak-cqa-v1/README.md
+!data/models/qwen3-1.7b-weak-cqa-v1/LICENSE-QWEN3
+!data/models/qwen3-1.7b-weak-cqa-v1/adapter_config.json
+!data/models/qwen3-1.7b-weak-cqa-v1/*.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/adapters.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/0000025_adapters.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/0000050_adapters.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/0000075_adapters.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/0000100_adapters.safetensors
+!data/models/qwen3-1.7b-weak-cqa-v1/smoke_gen-ru-short-004.json
 
 # Private manual labels, dialogue exports, and Python caches
 data/annotations/

@@ -92,7 +92,7 @@ export async function addConversations(records: Conversation[]) {
   // The import response omits messages; use the exact submitted payload with server IDs.
   const imported = response.items.map((item, index) => mapConversation({...item, messages: payload.conversations[index].messages}));
   state.conversations.unshift(...imported);
-  return response.imported;
+  return imported;
 }
 export async function importDataset(groupId: string) {
   const result = await api.request<{imported: number; skipped: number}>("datasets/import", {group_id: groupId}, 180000);

@@ -197,6 +197,17 @@ def specification():
                    'pending': {'type': 'integer'}, 'skipped': {'type': 'integer'}, 'dry_run': {'type': 'boolean'}},
                   ('dataset_group_id', 'received', 'imported', 'pending', 'skipped', 'dry_run')),
               obj({'group_id': {**text(24), 'pattern': '^[A-Za-z0-9_-]+$'}, 'dry_run': {'type': 'boolean'}}, ('group_id',)), success_code='200')
+    paths['/api/transcribe'] = {'post': {
+        'summary': 'Локальная транскрибация аудио; исходный файл после запроса удаляется',
+        'operationId': 'post_transcribe',
+        'requestBody': {'required': True, 'content': {'multipart/form-data': {'schema': obj({
+            'file': {'type': 'string', 'format': 'binary'}, 'language': enum('auto', 'ru', 'kk', 'en')}, ('file',))}}},
+        'responses': {'200': {'description': 'Сегменты распознанной речи', 'content': {'application/json': {'schema': obj({
+            'language': text(8), 'duration_seconds': {'type': 'number'}, 'model': text(160),
+            'segments': array(obj({'start_seconds': {'type': 'number'}, 'end_seconds': {'type': 'number'}, 'text': text(10000)},
+                                  ('start_seconds', 'end_seconds', 'text')), 2000, 1)}, ('language', 'duration_seconds', 'model', 'segments'))}}},
+                      'default': {'description': 'Ошибка загрузки или локального STT', 'content': {'application/json': {'schema': ref('Error')}}}}
+    }}
     operation('/api/stats', 'get', 'Счётчики диалогов, оценок и пересмотров', obj({}, strict=False))
     number_or_null = {'type': ['number', 'null']}
     count = {'type': 'integer', 'minimum': 0}

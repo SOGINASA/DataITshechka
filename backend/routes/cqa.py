@@ -280,3 +280,17 @@ def import_organizer_dataset():
         validation.fail('dry_run должен быть boolean.')
     data = fetch_dataset(current_app.config['FREEDOM_API_URL'], group_id=group_id)
     return jsonify(import_dataset(data, dry_run=dry_run, group_id=group_id))
+
+
+@cqa_bp.post('/transcribe')
+def transcribe_audio():
+    from services.transcription import transcribe, TranscriptionError
+    if not current_app.config['ASR_ENABLED']:
+        raise TranscriptionError('Локальная транскрибация отключена в конфигурации.', 503)
+    # Set the route-specific multipart bound before Flask parses request.files.
+    request.max_content_length = current_app.config['ASR_MAX_UPLOAD_BYTES'] + 1024 * 1024
+    upload = request.files.get('file')
+    if upload is None:
+        validation.fail('Добавьте аудиофайл в поле file.')
+    language = request.form.get('language', 'auto')
+    return jsonify(transcribe(upload, language, current_app.config))

@@ -43,6 +43,24 @@ export function createApiClient(base = API_BASE_URL, transport: typeof fetch = (
       throw new ApiError(message + (body === undefined ? "" : " Результат операции неизвестен; обновите данные перед повторной отправкой."));
     } finally { clearTimeout(timer); }
   }
+  async function upload<T>(path: string, body: FormData, timeout = 600000): Promise<T> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await transport(`${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`, {
+        method: "POST", headers: {Accept: "application/json"}, body, credentials: "omit", signal: controller.signal,
+      });
+      if (!response.headers.get("content-type")?.includes("application/json"))
+        throw new ApiError("Сервер вернул неожиданный ответ при обработке аудио.", response.status, "invalid_response");
+      const data = await response.json();
+      if (!response.ok) throw new ApiError(data.error?.message || `Ошибка сервера (${response.status}).`, response.status, data.error?.code);
+      return data as T;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      const message = controller.signal.aborted ? "Распознавание превысило лимит ожидания." : "Не удалось передать аудио серверу.";
+      throw new ApiError(message, 0, "network_error");
+    } finally { clearTimeout(timer); }
+  }
   async function list<T>(path: string): Promise<T[]> {
     const items: T[] = [];
     for (let page = 1; ; page++) {
@@ -53,7 +71,7 @@ export function createApiClient(base = API_BASE_URL, transport: typeof fetch = (
       if (page >= data.pagination.pages) return items;
     }
   }
-  return { request, list };
+  return { request, list, upload };
 }
 export const api = createApiClient();
 export const apiId = encodeURIComponent;
