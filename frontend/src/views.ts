@@ -1,70 +1,19 @@
-import type {
-  Checklist,
-  Conversation,
-  Criterion,
-  Evaluation,
-} from "./types.js";
 import { getState } from "./state.js";
-import {
-  answerLabel,
-  finalValue,
-  formatScore,
-  normalized,
-  score,
-  scoreTone,
-  isAssessed,
-} from "./scoring.js";
-import {
-  conversationStatus,
-  date,
-  empty,
-  esc,
-  heading,
-  href,
-  icon,
-  table,
-  time,
-  uploadButton,
-  options,
-} from "./ui.js";
+import { empty, esc, heading, icon, table, uploadButton, options, paginationControls } from "./ui.js";
 export interface Filters {
   search: string;
   language: string;
   channel: string;
   status: string;
 }
-export function filterConversations(filters: Filters) {
-  const { conversations, appeals } = getState();
-  return conversations
-    .filter((c) => {
-      const evaluation = c.evaluations[c.evaluations.length - 1];
-      const value = score(evaluation, appeals);
-      return (
-        `${c.id} ${c.title} ${c.operator}`
-          .toLocaleLowerCase()
-          .includes(filters.search.toLocaleLowerCase()) &&
-        (filters.language === "all" || filters.language === c.language) &&
-        (filters.channel === "all" || filters.channel === c.channel) &&
-        (filters.status === "all" ||
-          (filters.status === "pending" && !isAssessed(evaluation)) ||
-          (filters.status === "assessed" && isAssessed(evaluation)) ||
-          (filters.status === "attention" && value !== null && value < 80) ||
-          (filters.status === "appeal" &&
-            appeals.some(
-              (a) => a.conversationId === c.id && a.status === "open",
-            )))
-      );
-    })
-    .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
-}
 export function dialogueResults(filters: Filters) {
-  const filtered = filterConversations(filters);
+  const {conversations: filtered, pagination} = getState();
   const active =
     filters.search ||
     Object.entries(filters).some(
       ([key, value]) => key !== "search" && value !== "all",
     );
-  return `<div class="results-line"><span>Найдено диалогов: <strong>${filtered.length}</strong></span>${active ? '<button class="text-button" data-action="reset-filters">Сбросить фильтры</button>' : ""}</div>${filtered.length ? table(filtered) : empty("Ничего не найдено", "Попробуйте другую тему или измените фильтры.", '<button class="button secondary" data-action="reset-filters">Сбросить фильтры</button>')}`;
+  return `<div class="results-line"><span>Найдено диалогов: <strong>${pagination.total}</strong></span>${active ? '<button class="text-button" data-action="reset-filters">Сбросить фильтры</button>' : ""}</div>${filtered.length ? table(filtered) + paginationControls("dialogue-page") : empty("Ничего не найдено", "Попробуйте другую тему или измените фильтры.", '<button class="button secondary" data-action="reset-filters">Сбросить фильтры</button>')}`;
 }
 export function dialoguesView(filters: Filters) {
   return (

@@ -53,6 +53,7 @@ export interface Evaluation {
   createdAt: string;
 }
 export interface Conversation {
+  summary?: {score: number | null; assessed: boolean; evaluationId: string | null; openAppeals: number};
   externalId?: string | null;
   id: string;
   title: string;
