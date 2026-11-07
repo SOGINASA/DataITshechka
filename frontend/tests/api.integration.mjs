@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+const nativeFetch = globalThis.fetch;
+const {API_BASE_URL} = await import('../dist/js/config.js');
+const basePath = new URL(API_BASE_URL).pathname.replace(/\/$/, '') + '/';
+globalThis.fetch = (url, init) => {
+  const parsed = new URL(url);
+  assert.ok(parsed.pathname.startsWith(basePath));
+  return nativeFetch(`http://127.0.0.1:${process.env.QA_API_PORT}/api/` + parsed.pathname.slice(basePath.length) + parsed.search, init);
+};
+const state = await import('../dist/js/state.js');
+const {api} = await import('../dist/js/api.js');
+const {parseImport, importExample} = await import('../dist/js/import.js');
+const {score, answerLabel} = await import('../dist/js/scoring.js');
+await state.loadWorkspace();
+assert.equal(state.getState().conversations.length, 0);
+const official = structuredClone(state.getState().checklists[0]);
+assert.ok(official.criteria.every(c => c.rule.type === 'semantic'));
+const draft = structuredClone(official);
+draft.name = 'API integration QA';
+const saved = await state.saveChecklist(draft);
+assert.notEqual(saved.id, official.id);
+assert.deepEqual(saved.criteria.map(c => c.rule), official.criteria.map(c => c.rule));
+const records = parseImport(importExample);
+assert.equal(await state.addConversations(records), 1);
+const conversation = state.getState().conversations[0];
+assert.notEqual(conversation.id, records[0].id);
+assert.equal(conversation.externalId, records[0].id);
+await assert.rejects(state.addConversations(records), e => e.status === 409);
+await assert.rejects(state.evaluate(conversation.id, saved.id), e => e.status === 503);
+assert.equal(conversation.evaluations.length, 0);
+const evaluation = await state.evaluate(conversation.id, saved.id, 'baseline');
+assert.equal(score(evaluation), null);
+const criterion = evaluation.checklist.criteria[0];
+assert.equal(answerLabel(null, criterion, evaluation.results[0].status), 'Не оценено');
+const appeal = await state.submitAppeal({conversationId: conversation.id, evaluationId: evaluation.id,
+  criterionId: criterion.id, originalValue: null, comment: 'Check the greeting', author: 'QA operator'});
+await state.resolveAppeal(appeal.id, 'change', 1, 'Greeting confirmed in message 2', 'QA reviewer', '2', '', '');
+assert.equal(conversation.evaluations[0].revision, 2);
+assert.equal(conversation.evaluations[0].results[0].value, 1);
+assert.equal(conversation.evaluations[0].originalResults[0].value, null);
+assert.equal(appeal.reason, 'Greeting confirmed in message 2');
+await api.request(`evaluations/${evaluation.id}/reviews`, {expected_revision: 2, reviewer: 'Other reviewer',
+  comment: 'Concurrent review', overrides: [{criterion_id: criterion.id, value: true, explanation: 'Confirmed', evidence_message_ids: ['2']}]});
+await assert.rejects(state.submitAppeal({conversationId: conversation.id, evaluationId: evaluation.id,
+  criterionId: criterion.id, originalValue: 1, comment: 'Stale write', author: 'QA operator'}), e => e.status === 409);
+await state.loadWorkspace();
+const reloaded = state.getState().conversations[0].evaluations[0];
+assert.equal(reloaded.revision, 3);
+assert.equal(reloaded.results[0].value, 1);
+assert.equal(reloaded.originalResults[0].value, null);
+assert.equal(state.getState().appeals[0].reason, 'Greeting confirmed in message 2');
+assert.equal(state.getState().conversations[0].transcript[1].startMs, 12000);
+console.log('PASS: real isolated Flask API: load, version, atomic import/duplicate, 503, baseline, appeal/change, evidence, 409 and reload');

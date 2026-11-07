@@ -1,46 +1,79 @@
-# Getting Started with Create React App
+# Freedom CQA — фронтенд
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+TypeScript, Tailwind CSS и DOM. Сборка выдаёт статические файлы в `dist/`.
+Рабочие данные загружаются из Flask API, изменения сохраняются в PostgreSQL через бэкенд.
+Старые демоданные из localStorage не читаются и автоматически на сервер не отправляются.
 
-## Available Scripts
+## Адреса
 
-In the project directory, you can run:
+- Фронтенд: `https://dataitshechka.vercel.app/`.
+- API по умолчанию: `https://foodtrack.beast-inside.kz/fbroker/api`.
+- Базовый адрес задан в [src/config.ts](src/config.ts). Для другой среды передайте
+  переменную **сборки** `PUBLIC_API_URL`; `scripts/build.mjs` запишет её в публичный модуль конфигурации.
+- Секреты, пароль PostgreSQL и подписанный `FREEDOM_API_URL` остаются на бэкенде.
 
-### `npm start`
+В Vercel: Root Directory `frontend`, Framework `Other`, Install `npm ci`,
+Build `npm run build`, Output `dist`. Переменная `PUBLIC_API_URL` необязательна
+для указанного production API. После её изменения нужна новая сборка.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+В серверном `backend/.env` разрешён точный origin `https://dataitshechka.vercel.app`
+в `CORS_ORIGINS`. Preview-домены Vercel автоматически не разрешаются.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Подключённые операции
 
-### `npm test`
+- Диалоги, все страницы списков, история оценок, чек-листы и апелляции.
+- Импорт JSON: атомарная пачка до 100 диалогов и 4 МиБ; повторяющийся внешний ID
+  возвращает ошибку без частичного сохранения. `conversation_id` из файла становится `external_id`.
+- Явный импорт набора организатора по `group_id`, включая DEV. Запрос запускается
+  только кнопкой пользователя; существующие идентичные записи пропускаются бэкендом.
+- AI-оценка (`auto`) и явно выбранная ручная проверка (`baseline`). Baseline не заменяет
+  модель: смысловые критерии остаются неоценёнными. Без настроенной Ollama AI-запрос
+  возвращает понятную ошибку; демооценка вместо него не создаётся.
+- Новые версии чек-листа с сохранением правил оценки, требований к доказательствам,
+  шкал и условий N/A. Числовые версии увеличиваются; после строковых создаётся версия с ISO-временем.
+- Подача апелляций и решения проверяющего с именем, обоснованием, текущей ревизией
+  и при необходимости номерами реплик или явно указанным проверенным диапазоном.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Оценка, её исходный результат и историческое решение по апелляции различаются.
+Баллы берутся из API: неполная оценка не отображается как финальные 100 баллов,
+`needs_review` не превращается в N/A. При конфликте `409` ввод сохраняется;
+обновите данные и проверьте актуальные значения перед повторной отправкой.
+POST-запросы автоматически не повторяются. При сетевом тайм-ауте результат записи
+может быть неизвестен — сначала обновите данные.
 
-### `npm run build`
+Имена автора и проверяющего — подписи, не аутентифицированные учётные записи.
+Бэкенд сохраняет режим прототипа без входа.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Локальный запуск
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```powershell
+cd frontend
+npm ci
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+По умолчанию локальный фронтенд также использует production API. Для разработки
+с отдельным бэкендом задайте адрес до запуска (файл `.env` автоматически не читается):
 
-### `npm run eject`
+```powershell
+$env:PUBLIC_API_URL = 'http://127.0.0.1:6767/api'
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Проверки
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```powershell
+npm test
+# Нужен Python с установленными backend/requirements-dev.txt:
+npm run test:api
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+`npm test` проверяет арифметику, импорт, клиент API, пагинацию, ошибки/тайм-ауты,
+преобразования DTO, историю решений и неполные оценки.
+`test:api` сам поднимает Flask на свободном loopback-порту с временной SQLite-БД,
+проверяет импорт, версии, оценивание, апелляции, конфликт ревизий и перезагрузку.
+Рабочая БД и внешние наборы данных в этих проверках не используются.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Основные файлы: `src/api.ts` — HTTP, `src/api-mapping.ts` — контракт сервера,
+`src/state.ts` — серверные операции, `src/app.ts` — обработчики и состояния интерфейса.
+Фикстуры в `src/data.ts` используются существующими тестами; состояние приложения из них не создаётся.

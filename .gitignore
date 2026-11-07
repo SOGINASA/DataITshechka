@@ -9,6 +9,7 @@ frontend/build/
 .env.*
 !.env.example
 .DS_Store
+.deploy/
 
 # Logs
 npm-debug.log*
