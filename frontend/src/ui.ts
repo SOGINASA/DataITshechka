@@ -12,6 +12,7 @@ export const esc = (value: unknown) =>
 export const href = (kind: string, id = "") =>
   `#/${kind}${id ? "/" + encodeURIComponent(id) : ""}`;
 const paths: Record<string, string> = {
+  refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/>',
   play: '<path d="m8 4 12 8-12 8V4Z"/>',
   pause: '<path d="M8 4v16M16 4v16"/>',
   dashboard:

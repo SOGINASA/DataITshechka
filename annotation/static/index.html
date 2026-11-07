@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CQA · Ручная разметка</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div><span class="eyebrow">CQA / ЛОКАЛЬНЫЙ ИНСТРУМЕНТ</span><h1>Разметка диалогов</h1></div>
+    <div><a class="button secondary" href="/audio" target="_blank" rel="noopener noreferrer">Записи звонков</a> <a class="button secondary" href="/api/export" download>Экспорт JSON</a></div>
+  </header>
+  <div id="banner" class="banner"></div>
+  <section class="review-workflow" aria-label="Продолжение разметки">
+    <div><h2>Дополнить существующую разметку</h2><p>Уже подтверждённые вами оценки сохранены. Начните с «не уверен»; правки записываются в ту же версию, исходные ответы остаются в истории.</p></div>
+    <div class="review-controls"><label>Рабочая очередь<select id="review-phase"><option value="uncertain">Неуверенные оценки ИИ</option><option value="remaining">Остальные неподтверждённые</option><option value="all">Все оставшиеся</option></select></label><button id="review-start">Продолжить разметку</button><button id="review-exit" class="secondary" hidden>Обычный просмотр</button></div>
+    <p id="review-progress" role="status" aria-live="polite"></p><p id="review-task" class="hint"></p>
+  </section>
+  <section class="toolbar" aria-label="Настройки разметки">
+    <label>Чек-лист<select id="profile"><option value="">Загрузка…</option></select></label>
+    <label>Имя автора разметки<input id="annotator" list="annotator-options" maxlength="100" placeholder="Например: Алия"><datalist id="annotator-options"></datalist></label>
+    <button id="open-annotator" class="secondary">Открыть разметку автора</button>
+    <label>Язык<select id="language"><option value="">Все языки</option><option>RU</option><option>KZ</option><option>EN</option></select></label>
+    <label>Канал<select id="channel"><option value="">Все каналы</option><option value="agent chat">Чаты</option><option value="voice call">Звонки</option></select></label>
+    <label>Поиск ID<input id="search" type="search" placeholder="p1-ru-001"></label>
+  </section>
+  <details class="checklist-settings">
+    <summary>Чек-лист и инструкция</summary>
+    <p>Оценивайте только оператора. Бот, клиент и система дают контекст. Выберите критерий, затем отметьте реплики слева. Для отсутствующего действия задайте проверенный участок. N/A — неприменимо по правилу; «не уверен» — не хватает данных или знаний.</p>
+    <p>По умолчанию используется официальный чек-лист качества чатов. Шкалы, веса и N/A перенесены из выданного PDF. «Грубые ошибки: Да» означает нарушение и отмечается отдельно от балла. Замена чек-листа создаёт отдельную версию разметки, старые файлы сохраняются. Даже небольшое изменение JSON создаёт новую версию.</p>
+    <button id="download-checklist" class="secondary">Скачать текущий чек-лист</button>
+    <label class="file-label">Загрузить чек-лист JSON<input id="checklist-file" type="file" accept=".json,application/json"></label>
+    <p>Чтобы проверить чужую работу, откройте имя её автора, изучите оценки, исправьте спорное и укажите себя в поле «Проверяющий». Имена здесь — метаданные, входа и проверки личности нет.</p>
+  </details>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <main>
+    <aside class="panel conversations"><div class="panel-heading"><h2>Диалоги</h2><span id="record-count"></span></div><div id="conversation-list"></div></aside>
+    <section class="panel transcript-panel" aria-label="Транскрипт">
+      <div class="panel-heading"><div><h2 id="conversation-title">Загрузка…</h2><span id="conversation-meta" class="muted"></span></div><a id="audio" target="_blank" rel="noopener noreferrer" hidden>Открыть запись ↗</a></div>
+      <p class="hint">Галочки привяжут реплики к выбранному критерию. Доказательства сохраняются с точным текстом и временем.</p>
+      <div id="audio-review" class="audio-review" hidden><label class="checkbox-label"><input id="audio-reviewed" type="checkbox">Аудио прослушано мной</label><label>Наблюдения по аудио — при необходимости<textarea id="audio-notes" rows="2" placeholder="Например: что удалось уточнить по записи. Переход по ссылке сам по себе не подтверждает прослушивание."></textarea></label></div>
+      <div id="transcript" class="transcript"></div>
+    </section>
+    <section class="panel annotation-panel" aria-label="Оценки критериев">
+      <div class="panel-heading"><h2>Оценки</h2><span id="progress"></span></div>
+      <p id="score-summary" class="hint" aria-live="polite"></p>
+      <p id="assessment-context" class="hint"></p>
+      <div id="criteria" class="criteria"></div>
+      <div id="criterion-form"></div>
+      <div class="review-box">
+        <label>Проверяющий<input id="reviewer" maxlength="100" placeholder="Имя второго человека"></label>
+        <label class="checkbox-label"><input id="reviewed" type="checkbox">Проверяющий подтвердил все ответы и доказательства</label>
+        <p class="hint">В режиме дополнения отметка выставляется после подтверждения всех критериев. Изменение оценки снимает её подтверждение. Само открытие записи не отмечает аудио прослушанным.</p>
+      </div>
+      <div class="save-actions"><button id="save-draft" class="secondary">Сохранить черновик</button><button id="save-complete">Завершить диалог</button></div>
+      <div id="review-actions" class="review-actions" hidden><button id="confirm-next">Подтвердить и дальше</button><button id="review-skip" class="secondary">Отложить</button><button id="confirm-dialogue" class="secondary">Подтвердить все определённые оценки диалога</button></div>
+      <p id="save-state" class="hint"></p>
+    </section>
+  </main>
+  <footer>Данные и разметка остаются на этом компьютере. Изменения записываются на диск только кнопкой сохранения или Ctrl+S. Экспорт содержит тексты диалогов.</footer>
+</body>
+</html>
