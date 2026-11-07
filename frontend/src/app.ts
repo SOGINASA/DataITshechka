@@ -13,6 +13,7 @@ import { ApiError } from "./api.js";
 import { answerLabel, validValue } from "./scoring.js";
 import { importExample, parseImport } from "./import.js";
 import { empty, esc, href, icon } from "./ui.js";
+import { mobileHeader, navItems, updateMobileNavigation } from "./navigation.js";
 import {
   allCriteriaView,
   currentEvaluation,
@@ -65,12 +66,6 @@ let appealTarget: {
 } | null = null;
 let switchTarget = "";
 const busy = new Set<string>();
-const navItems = [
-  { id: "overview", label: "Обзор", icon: "dashboard" },
-  { id: "dialogues", label: "Диалоги", icon: "chat" },
-  { id: "checklists", label: "Чек-листы", icon: "checklist" },
-  { id: "appeals", label: "Апелляции", icon: "scale" },
-];
 function route() {
   const raw = location.hash.slice(1) || "/overview";
   const [path, query = ""] = raw.split("?");
@@ -134,7 +129,8 @@ function render() {
     );
   else if (r.section === "appeals") content = appealsView(appealStatus, r.id);
   else content = overviewView();
-  app.innerHTML = `<div class="app-shell"><aside class="sidebar" aria-label="Навигация и помощь">${nav(r.section)}</aside><div class="app-main"><header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><button class="text-button" data-action="refresh"${loading ? " disabled" : ""}>Обновить данные</button></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${loadError && loaded ? `<div class="notice-box" role="alert">${esc(loadError)}</div>` : ""}${content}</main></div></div>`;
+  app.innerHTML = `<div class="app-shell"><aside class="sidebar" aria-label="Навигация и помощь">${nav(r.section)}</aside><div class="app-main"><header class="topbar">${mobileHeader(r.section, Boolean(r.id))}<div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><div class="topbar-actions"><button class="icon-button mobile-help" data-action="help" aria-label="Помощь">${icon("help", 21)}</button><button class="text-button refresh-button" data-action="refresh" aria-label="Обновить данные"${loading ? " disabled" : ""}>${icon("refresh", 20)}<span>Обновить данные</span></button></div></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${loadError && loaded ? `<div class="notice-box" role="alert">${esc(loadError)}</div>` : ""}${content}</main></div></div>`;
+  updateMobileNavigation(r.section, getState().appeals.filter(a => a.status === "open").length);
   document.title = `${navItems.find((n) => n.id === r.section)?.label || "Обзор"} · Freedom CQA`;
   if (busy.has(r.id)) setEvaluationBusy(r.id);
   if (loaded && !loading) lastRoute = r.raw;
@@ -222,7 +218,12 @@ function focusEvidence(index: number, activateTab = true, moveFocus = true) {
   message?.classList.add("highlighted");
   if (moveFocus) message?.focus({ preventScroll: true });
   const container = document.querySelector<HTMLElement>(".transcript-messages");
-  if (message && container && container.clientHeight) {
+  if (message && moveFocus && matchMedia("(max-width: 760px)").matches) {
+    message.scrollIntoView({
+      block: "center",
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  } else if (message && container && container.clientHeight) {
     const previous = document.getElementById(`message-${index - 1}`);
     const context =
       previous &&
@@ -507,6 +508,10 @@ document.addEventListener("click", async (event) => {
   if ((busy.size || pendingForms.size) && ["refresh", "evaluate", "upload", "confirm-switch", "checklist-version", "add-criterion", "delete-criterion"].includes(action || "")) {
     notify("Дождитесь завершения текущей операции."); return;
   }
+  // Safari does not focus buttons on tap; retain a real return target for dialogs.
+  if (["upload", "menu", "help", "all-criteria", "appeal"].includes(action || "")) {
+    control.focus({ preventScroll: true });
+  }
   if (action === "refresh") { await refreshWorkspace(); return; }
   if (action === "upload") uploadModal();
   if (action === "close-modal") closeModal();
@@ -616,6 +621,12 @@ document.addEventListener("click", async (event) => {
       const workspace = document.querySelector(".checklist-workspace");
       workspace?.classList.add("editor-show-detail");
       workspace?.classList.remove("editor-show-list");
+      if (matchMedia("(max-width: 760px)").matches) {
+        const heading = document.querySelector<HTMLElement>(".criterion-editor-header h2");
+        heading?.setAttribute("tabindex", "-1");
+        heading?.focus({ preventScroll: true });
+        document.querySelector(".criterion-editor-header")?.scrollIntoView({ block: "start" });
+      }
     }
   }
   if (action === "editor-back") {
@@ -623,6 +634,11 @@ document.addEventListener("click", async (event) => {
     const workspace = document.querySelector(".checklist-workspace");
     workspace?.classList.add("editor-show-list");
     workspace?.classList.remove("editor-show-detail");
+    if (matchMedia("(max-width: 760px)").matches) {
+      const selected = document.querySelector<HTMLElement>(".criterion-master-item.selected");
+      selected?.focus({ preventScroll: true });
+      selected?.scrollIntoView({ block: "center" });
+    }
   }
   if (action === "evaluate") {
     const id = control.dataset.id!;
