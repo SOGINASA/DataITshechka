@@ -88,13 +88,13 @@ export function scoreBadge(value: number | null) {
 export function conversationStatus(c: Conversation) {
   const { appeals } = getState();
   const evaluation = c.evaluations[c.evaluations.length - 1];
-  if (appeals.some((a) => a.conversationId === c.id && a.status === "open"))
+  if (c.summary?.openAppeals || appeals.some((a) => a.conversationId === c.id && a.status === "open"))
     return '<span class="badge warning"><i class="status-dot"></i>Апелляция</span>';
-  if (!evaluation)
+  if (!evaluation && !c.summary?.evaluationId)
     return '<span class="badge neutral"><i class="status-dot"></i>Не оценён</span>';
-  if (!isAssessed(evaluation))
+  if (!(c.summary ? c.summary.assessed : isAssessed(evaluation)))
     return '<span class="badge warning"><i class="status-dot"></i>Оценка не завершена</span>';
-  const value = score(evaluation, appeals);
+  const value = c.summary ? c.summary.score : score(evaluation, appeals);
   return `<span class="badge ${scoreTone(value)}"><i class="status-dot"></i>${value !== null && value < 80 ? "Нужна проверка" : "Оценён"}</span>`;
 }
 export function table(conversations: Conversation[]) {
@@ -107,7 +107,7 @@ export function table(conversations: Conversation[]) {
             .map((n) => n[0])
             .slice(0, 2)
             .join(""),
-        )}</span><span>${esc(c.operator)}</span></span></td><td><span class="channel-label">${c.channel === "voice call" ? "Звонок" : "Чат"}<span class="language">${esc(c.language)}</span></span></td><td>${scoreBadge(score(c.evaluations[c.evaluations.length - 1], getState().appeals))}</td><td>${conversationStatus(c)}</td><td><a href="${href("dialogues", c.id)}" class="icon-button row-link" aria-label="Открыть диалог ${esc(c.id)}">${icon("external", 17)}</a></td></tr>`,
+        )}</span><span>${esc(c.operator)}</span></span></td><td><span class="channel-label">${c.channel === "voice call" ? "Звонок" : "Чат"}<span class="language">${esc(c.language)}</span></span></td><td>${scoreBadge(c.summary ? c.summary.score : score(c.evaluations[c.evaluations.length - 1], getState().appeals))}</td><td>${conversationStatus(c)}</td><td><a href="${href("dialogues", c.id)}" class="icon-button row-link" aria-label="Открыть диалог ${esc(c.id)}">${icon("external", 17)}</a></td></tr>`,
     )
     .join("")}</tbody></table></div>`;
 }
@@ -151,4 +151,10 @@ export function valueOptions(criterion: Criterion, value: number | null) {
       ? `<option value="na"${value === null ? " selected" : ""}>N/A — не применяется</option>`
       : "")
   );
+}
+
+export function paginationControls(action: string) {
+  const {pagination: p} = getState();
+  if (p.pages <= 1) return "";
+  return `<nav class="results-line" aria-label="Страницы списка"><button class="button secondary small" data-action="${action}" data-page="${p.page - 1}"${p.page <= 1 ? " disabled" : ""}>Назад</button><span>Страница ${p.page} из ${p.pages}</span><button class="button secondary small" data-action="${action}" data-page="${p.page + 1}"${p.page >= p.pages ? " disabled" : ""}>Далее</button></nav>`;
 }
