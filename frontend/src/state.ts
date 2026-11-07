@@ -2,44 +2,86 @@ import type { Appeal, Checklist, Conversation } from "./types.js";
 import { validValue } from "./scoring.js";
 import { api, apiId } from "./api.js";
 import { mapAppeal, mapChecklist, mapConversation, mapEvaluation, checklistPayload, conversationPayload,
-  type ApiAppeal, type ApiChecklist, type ApiConversation, type ApiEvaluation, type ApiExport, type ApiReview } from "./api-mapping.js";
+  type ApiAppeal, type ApiChecklist, type ApiConversation, type ApiEvaluation, type ApiReview } from "./api-mapping.js";
 
-const state: { conversations: Conversation[]; checklists: Checklist[]; appeals: Appeal[] } = {
-  conversations: [], checklists: [], appeals: [],
+export interface Pagination { page: number; per_page: number; total: number; pages: number }
+export interface Summary extends Omit<ApiConversation, "messages" | "recording_url"> {
+  evaluation_id: string | null; assessed: boolean; final_score: number | null; open_appeals: number;
+}
+interface AppealRow {
+  id: string; evaluation_id: string; criterion_id: string; status: "open" | "resolved"; created_at: string;
+  conversation_id: string; operator_name: string | null; criterion_name: string;
+}
+export interface Overview {
+  total: number; assessed: number; attention: number; average: number | null; open_appeals: number;
+  recent: Summary[]; appeals: AppealRow[];
+  trend: {date: string; value: number | null}[]; criteria: {name: string; value: number | null}[];
+}
+interface Bundle {
+  conversation: ApiConversation; evaluations: ApiEvaluation[]; checklists: ApiChecklist[];
+  appeals: ApiAppeal[]; reviews: ApiReview[];
+}
+export interface LoadOptions { page?: number; search?: string; language?: string; channel?: string; status?: string }
+const state = {
+  conversations: [] as Conversation[], checklists: [] as Checklist[], appeals: [] as Appeal[],
+  overview: null as Overview | null, openAppeals: 0,
+  pagination: {page: 1, per_page: 20, total: 0, pages: 0} as Pagination,
+  appealRows: [] as AppealRow[], selectedAppeal: "", appealStatus: "open",
 };
 export const getState = () => state;
+let loadVersion = 0;
+export function cancelWorkspaceLoad() { loadVersion++; }
 
-async function mapLimited<T, R>(items: T[], task: (item: T) => Promise<R>, concurrency = 4): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-  await Promise.all(Array.from({length: Math.min(concurrency, items.length)}, async () => {
-    while (cursor < items.length) { const index = cursor++; results[index] = await task(items[index]); }
-  }));
-  return results;
+function mapSummary(raw: Summary): Conversation {
+  return {...mapConversation({...raw, messages: [], recording_url: null}),
+    summary: {score: raw.final_score, assessed: raw.assessed, evaluationId: raw.evaluation_id, openAppeals: raw.open_appeals}};
 }
-function unpack(data: ApiExport, conversation: Conversation) {
-  return { evaluation: mapEvaluation(data.evaluation, mapChecklist(data.checklist), conversation),
-    appeals: data.appeals.map(a => mapAppeal(a, conversation.id, data.reviews.find(r => r.id === a.review_id))) };
+function mapBundle(data: Bundle) {
+  const checklists = data.checklists.map(mapChecklist);
+  const conversation = mapConversation(data.conversation);
+  conversation.evaluations = data.evaluations.map(raw => {
+    const checklist = checklists.find(c => c.id === raw.checklist_id);
+    if (!checklist) throw new Error("В ответе сервера отсутствует чек-лист оценки.");
+    return mapEvaluation(raw, checklist, conversation);
+  });
+  const appeals = data.appeals.map(a => mapAppeal(a, conversation.id, data.reviews.find(r => r.id === a.review_id)));
+  return {checklists, conversation, appeals};
 }
-async function fetchConversation(id: string) {
-  const [raw, evaluations] = await Promise.all([
-    api.request<ApiConversation>(`conversations/${apiId(id)}`),
-    api.list<ApiEvaluation>(`conversations/${apiId(id)}/evaluations`),
-  ]);
-  const conversation = mapConversation(raw);
-  const details = await mapLimited(evaluations.reverse(), async e => unpack(await api.request<ApiExport>(`evaluations/${apiId(e.id)}/export`), conversation), 2);
-  conversation.evaluations = details.map(d => d.evaluation);
-  return {conversation, appeals: details.flatMap(d => d.appeals)};
-}
-export async function loadWorkspace() {
-  const [checklists, summaries] = await Promise.all([
-    api.list<ApiChecklist>("checklists"), api.list<{id: string}>("conversations"),
-  ]);
-  const details = await mapLimited(summaries, c => fetchConversation(c.id));
-  // Replace only after every request succeeds: never show an incomplete snapshot as complete.
-  state.checklists = checklists.reverse().map(mapChecklist);
-  state.conversations = details.map(d => d.conversation);
-  state.appeals = details.flatMap(d => d.appeals).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+export async function loadWorkspace(section = "overview", id = "", options: LoadOptions = {}) {
+  const version = ++loadVersion;
+  const params = new URLSearchParams({page: String(options.page || 1), per_page: "20"});
+  let next: Partial<typeof state>;
+  if (section === "dialogues" && id) {
+    const data = await api.request<Bundle & {open_appeals: number}>(`workspace/conversations/${apiId(id)}`);
+    const bundle = mapBundle(data);
+    next = {checklists: bundle.checklists, conversations: [bundle.conversation], appeals: bundle.appeals, openAppeals: data.open_appeals};
+  } else if (section === "dialogues") {
+    params.set("search", options.search || "");
+    params.set("language", ({RU:"ru", KZ:"kk", EN:"en"} as Record<string,string>)[options.language || ""] || "all");
+    params.set("channel", ({"agent chat":"chat", "voice call":"call"} as Record<string,string>)[options.channel || ""] || "all");
+    params.set("status", options.status || "all");
+    const data = await api.request<{items: Summary[]; pagination: Pagination; open_appeals: number}>(`workspace/conversations?${params}`);
+    next = {conversations: data.items.map(mapSummary), appeals: [], pagination: data.pagination, openAppeals: data.open_appeals};
+  } else if (section === "appeals") {
+    params.set("status", options.status || "open");
+    if (id) params.set("selected", id);
+    const data = await api.request<{items: AppealRow[]; pagination: Pagination; open_appeals: number;
+      status: string; selected_id: string | null; detail: Bundle | null}>(`workspace/appeals?${params}`);
+    const bundle = data.detail ? mapBundle(data.detail) : null;
+    // List metadata stays lightweight; only the selected conversation has evidence/history.
+    next = {conversations: bundle ? [bundle.conversation] : [], checklists: bundle?.checklists || [], appeals: bundle?.appeals || [],
+      appealRows: data.items, selectedAppeal: data.selected_id || "", appealStatus: data.status,
+      pagination: data.pagination, openAppeals: data.open_appeals};
+  } else if (section === "checklists") {
+    const [checklists, stats] = await Promise.all([api.list<ApiChecklist>("checklists"), api.request<{open_appeals: number}>("stats")]);
+    next = {checklists: checklists.reverse().map(mapChecklist), openAppeals: stats.open_appeals};
+  } else {
+    const overview = await api.request<Overview>("workspace/overview");
+    next = {overview, conversations: overview.recent.map(mapSummary), appeals: [], openAppeals: overview.open_appeals};
+  }
+  if (version !== loadVersion) return false;
+  Object.assign(state, next);
+  return true;
 }
 export async function addConversations(records: Conversation[]) {
   if (!records.length || records.length > 100) throw new Error("За один раз можно добавить от 1 до 100 диалогов.");
@@ -54,8 +96,6 @@ export async function addConversations(records: Conversation[]) {
 }
 export async function importDataset(groupId: string) {
   const result = await api.request<{imported: number; skipped: number}>("datasets/import", {group_id: groupId}, 180000);
-  try { await loadWorkspace(); }
-  catch { throw new Error("Импорт выполнен, но не удалось обновить список. Обновите страницу перед повторным импортом."); }
   return result;
 }
 export async function saveChecklist(draft: Checklist) {
@@ -95,6 +135,7 @@ export async function submitAppeal(input: {
   });
   const appeal = mapAppeal(raw, input.conversationId);
   state.appeals.unshift(appeal);
+  state.openAppeals++;
   return appeal;
 }
 export async function resolveAppeal(id: string, decision: "confirm" | "change", value: number | null,
@@ -133,5 +174,6 @@ export async function resolveAppeal(id: string, decision: "confirm" | "change", 
   current.evaluations[index] = mapEvaluation(result.evaluation, evaluation.checklist, current);
   const currentAppeal = state.appeals.find(a => a.id === id);
   if (currentAppeal) Object.assign(currentAppeal, mapAppeal(result.appeal, current.id, result.review));
+  state.openAppeals = Math.max(0, state.openAppeals - 1);
   return true;
 }

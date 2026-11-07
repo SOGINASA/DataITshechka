@@ -1,27 +1,19 @@
 import { getState } from "./state.js";
-import { answerLabel, finalValue, formatScore, score } from "./scoring.js";
-import { date, empty, esc, href, icon, valueOptions, brandArt } from "./ui.js";
+import { answerLabel, formatScore, score } from "./scoring.js";
+import { date, empty, esc, href, icon, valueOptions, brandArt, paginationControls } from "./ui.js";
 import { criterionLabel, elapsed, clock, usesDemoAudio } from "./review.js";
 export function appealsView(status = "open", selectedId = "") {
-  const { appeals, conversations } = getState();
-  const filtered = appeals.filter(
-    (a) => status === "all" || a.status === status,
-  );
-  const selected = appeals.find((a) => a.id === selectedId) || filtered[0];
-  return `<div class="page-heading"><h1 class="page-title">${brandArt("appeals")}Апелляции</h1><span class="muted">${appeals.filter((a) => a.status === "open").length} на рассмотрении</span></div><div class="appeals-layout ${selectedId ? "appeal-show-detail" : "appeal-show-list"}"><section class="appeals-list-panel"><div class="appeal-tabs segmented"><button data-action="appeal-filter" data-status="open" class="${status === "open" ? "active" : ""}" aria-pressed="${status === "open"}">Открытые</button><button data-action="appeal-filter" data-status="resolved" class="${status === "resolved" ? "active" : ""}" aria-pressed="${status === "resolved"}">Решённые</button><button data-action="appeal-filter" data-status="all" class="${status === "all" ? "active" : ""}" aria-pressed="${status === "all"}">Все</button></div>${
+  const { appeals, appealRows: filtered, selectedAppeal, openAppeals } = getState();
+  const selected = appeals.find((a) => a.id === selectedAppeal);
+  return `<div class="page-heading"><h1 class="page-title">${brandArt("appeals")}Апелляции</h1><span class="muted">${openAppeals} на рассмотрении</span></div><div class="appeals-layout ${selectedId ? "appeal-show-detail" : "appeal-show-list"}"><section class="appeals-list-panel"><div class="appeal-tabs segmented"><button data-action="appeal-filter" data-status="open" class="${status === "open" ? "active" : ""}" aria-pressed="${status === "open"}">Открытые</button><button data-action="appeal-filter" data-status="resolved" class="${status === "resolved" ? "active" : ""}" aria-pressed="${status === "resolved"}">Решённые</button><button data-action="appeal-filter" data-status="all" class="${status === "all" ? "active" : ""}" aria-pressed="${status === "all"}">Все</button></div>${
     filtered.length
       ? filtered
           .map((a) => {
-            const c = conversations.find((c) => c.id === a.conversationId)!;
-            const e = c.evaluations.find((e) => e.id === a.evaluationId)!;
-            const cr = e.checklist.criteria.find(
-              (cr) => cr.id === a.criterionId,
-            )!;
-            return `<a href="${href("appeals", a.id)}" class="appeal-list-item ${selected?.id === a.id ? "selected" : ""}"><strong>${esc(c.operator)}</strong><span>${esc(criterionLabel(cr))}</span><div class="appeal-item-meta"><span class="badge ${a.status === "open" ? "warning" : "success"}">${a.status === "open" ? "Открыта" : "Решена"}</span><time>${esc(date(a.createdAt, true))}</time></div></a>`;
+            return `<a href="${href("appeals", a.id)}?page=${getState().pagination.page}&amp;status=${esc(status)}" class="appeal-list-item ${selected?.id === a.id ? "selected" : ""}"><strong>${esc(a.operator_name || "Не указан")}</strong><span>${esc(a.criterion_name)}</span><div class="appeal-item-meta"><span class="badge ${a.status === "open" ? "warning" : "success"}">${a.status === "open" ? "Открыта" : "Решена"}</span><time>${esc(date(a.created_at, true))}</time></div></a>`;
           })
           .join("")
       : empty("Нет апелляций", "Все обращения с этим статусом разобраны.")
-  }</section><section class="appeal-detail-panel">${selected ? appealDetail(selected.id) : '<div class="empty-state"><h2>Нет открытых обращений</h2></div>'}</section></div>`;
+  }${paginationControls("appeal-page")}</section><section class="appeal-detail-panel">${selected ? appealDetail(selected.id) : '<div class="empty-state"><h2>Нет открытых обращений</h2></div>'}</section></div>`;
 }
 function appealDetail(id: string) {
   const { appeals, conversations } = getState();

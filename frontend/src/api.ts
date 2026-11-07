@@ -8,7 +8,19 @@ export class ApiError extends Error {
 }
 
 export function createApiClient(base = API_BASE_URL, transport: typeof fetch = (...args) => fetch(...args)) {
-  async function request<T>(path: string, body?: unknown, timeout = 45000): Promise<T> {
+  const pending = new Map<string, Promise<unknown>>();
+  function request<T>(path: string, body?: unknown, timeout = 45000): Promise<T> {
+    if (body !== undefined) return send<T>(path, body, timeout).finally(() => pending.clear());
+    const key = `${timeout}:${path}`;
+    const existing = pending.get(key);
+    if (existing) return existing as Promise<T>;
+    const promise = send<T>(path, body, timeout).finally(() => {
+      if (pending.get(key) === promise) pending.delete(key);
+    });
+    pending.set(key, promise);
+    return promise;
+  }
+  async function send<T>(path: string, body?: unknown, timeout = 45000): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {

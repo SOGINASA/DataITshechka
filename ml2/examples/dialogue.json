@@ -1,0 +1,11 @@
+{
+  "conversation_id": "synthetic-support-example",
+  "channel": "chat",
+  "language": "ru",
+  "messages": [
+    {"id":"m1","speaker":"client","text":"Здравствуйте! Не могу найти, куда написать в поддержку."},
+    {"id":"m2","speaker":"operator","text":"Здравствуйте! Меня зовут Ирина. В тестовом приложении поддержка находится в разделе Помощь."},
+    {"id":"m3","speaker":"client","text":"Спасибо, нашёл."},
+    {"id":"m4","speaker":"operator","text":"Могу ещё чем-нибудь помочь? Хорошего дня!"}
+  ]
+}

@@ -4,6 +4,7 @@ import {
   evaluate,
   getState,
   loadWorkspace,
+  cancelWorkspaceLoad,
   importDataset,
   resolveAppeal,
   saveChecklist,
@@ -57,6 +58,10 @@ let selectedCriterion = "";
 let editorSelection = draft.criteria[0]?.id || "";
 let editorMobileDetail = false;
 let lastRoute = "";
+let loadedRoute = "";
+let requestVersion = 0;
+let currentPage = 1;
+let searchTimer: ReturnType<typeof setTimeout>;
 let toastTimer: ReturnType<typeof setTimeout>;
 let modalTrigger: HTMLElement | null = null;
 let appealTarget: {
@@ -79,7 +84,7 @@ function route() {
   return { raw, section: parts[0] || "overview", id, query };
 }
 function nav(section: string) {
-  const pending = getState().appeals.filter((a) => a.status === "open").length;
+  const pending = getState().openAppeals;
   return `<a href="#/overview" class="brand"><img src="./assets/brand/freedom-logo.svg" alt="Freedom"></a><nav aria-label="Основная навигация">${navItems.map((item) => `<a href="#/${item.id}" class="nav-item ${section === item.id ? "active" : ""}"${section === item.id ? ' aria-current="page"' : ""}>${icon(item.icon, 21)}<span>${item.label}</span>${item.id === "appeals" && pending ? `<span class="nav-badge">${pending}</span>` : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><button class="help-link" data-action="help">${icon("help", 20)}Помощь</button></div>`;
 }
 function render() {
@@ -96,20 +101,10 @@ function render() {
         selectedCriterion = selection.criterionId;
       }
     }
-    filters = {
-      search: "",
-      language: "all",
-      channel: "all",
-      status: new URLSearchParams(r.query).get("status") || "all",
-    };
-    if (r.section === "appeals" && r.id) {
-      const a = getState().appeals.find((a) => a.id === r.id);
-      if (a) appealStatus = a.status;
-    }
   }
   let content = "";
-  if (loading) content = empty("Загружаем данные", "Получаем диалоги, оценки и чек-листы с сервера.");
-  else if (!loaded) content = empty("Не удалось загрузить данные", loadError, '<button class="button primary" data-action="refresh">Повторить</button>');
+  if (loading) content = empty("Загружаем данные", "Получаем данные этого раздела с сервера.");
+  else if (!loaded || loadedRoute !== r.raw) content = empty("Не удалось загрузить данные", loadError, '<button class="button primary" data-action="refresh">Повторить</button>');
   else if (r.section === "dialogues" && r.id) {
     const c = conversations.find((c) => c.id === r.id);
     content = c
@@ -130,7 +125,7 @@ function render() {
   else if (r.section === "appeals") content = appealsView(appealStatus, r.id);
   else content = overviewView();
   app.innerHTML = `<div class="app-shell"><aside class="sidebar" aria-label="Навигация и помощь">${nav(r.section)}</aside><div class="app-main"><header class="topbar">${mobileHeader(r.section, Boolean(r.id))}<div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><div class="topbar-actions"><button class="icon-button mobile-help" data-action="help" aria-label="Помощь">${icon("help", 21)}</button><button class="text-button refresh-button" data-action="refresh" aria-label="Обновить данные"${loading ? " disabled" : ""}>${icon("refresh", 20)}<span>Обновить данные</span></button></div></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${loadError && loaded ? `<div class="notice-box" role="alert">${esc(loadError)}</div>` : ""}${content}</main></div></div>`;
-  updateMobileNavigation(r.section, getState().appeals.filter(a => a.status === "open").length);
+  updateMobileNavigation(r.section, getState().openAppeals);
   document.title = `${navItems.find((n) => n.id === r.section)?.label || "Обзор"} · Freedom CQA`;
   if (busy.has(r.id)) setEvaluationBusy(r.id);
   if (loaded && !loading) lastRoute = r.raw;
@@ -432,8 +427,7 @@ document.addEventListener("input", (event) => {
   }
   if (target.id === "search") {
     filters.search = target.value;
-    document.getElementById("dialogue-results")!.innerHTML =
-      dialogueResults(filters);
+    scheduleDialogueSearch();
   }
   if (target.id === "checklist-name") {
     draft.name = target.value;
@@ -446,8 +440,8 @@ document.addEventListener("change", async (event) => {
   const target = event.target as HTMLInputElement;
   if (target.dataset.filter) {
     filters[target.dataset.filter as keyof Filters] = target.value;
-    document.getElementById("dialogue-results")!.innerHTML =
-      dialogueResults(filters);
+    currentPage = 1;
+    await refreshWorkspace(true);
   }
   if (target.id === "checklist-version") {
     const id = target.value;
@@ -557,7 +551,16 @@ document.addEventListener("click", async (event) => {
   }
   if (action === "reset-filters") {
     filters = { search: "", language: "all", channel: "all", status: "all" };
-    render();
+    currentPage = 1;
+    await refreshWorkspace();
+  }
+  if (action === "dialogue-page" || action === "appeal-page") {
+    currentPage = Number(control.dataset.page);
+    if (action === "appeal-page" && route().id) {
+      location.hash = `/appeals?page=${currentPage}&status=${appealStatus}`;
+      return;
+    }
+    await refreshWorkspace();
   }
   if (action === "detail-tab") detailTab(control.dataset.tab!);
   if (action === "evidence") focusEvidence(Number(control.dataset.index));
@@ -677,9 +680,10 @@ document.addEventListener("click", async (event) => {
   }
   if (action === "appeal-filter") {
     appealStatus = control.dataset.status!;
+    currentPage = 1;
     if (route().id) {
       location.hash = "/appeals";
-    } else render();
+    } else await refreshWorkspace();
   }
   if (action === "checklist-version") {
     const id = control.dataset.id!;
@@ -737,6 +741,7 @@ document.addEventListener("submit", async (event) => {
   const controls = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>("input, select, textarea, button"));
   const previouslyDisabled = controls.map(c => c.disabled);
   pendingForms.add(form.id);
+  let saved = false;
   controls.forEach(c => c.disabled = true);
   // The checklist submit button is outside the form.
   const externalSubmit = document.getElementById("save-checklist") as HTMLButtonElement | null;
@@ -745,11 +750,11 @@ document.addEventListener("submit", async (event) => {
     if (form.id === "upload-form") {
       const records = parseImport((document.getElementById("json-input") as HTMLTextAreaElement).value);
       const count = await addConversations(records);
-      closeModal(); location.hash = "/dialogues"; render();
+      closeModal(); location.hash = "/dialogues";
       notify(`Добавлено диалогов: ${count}`);
     } else if (form.id === "dataset-form") {
       const result = await importDataset(String(data.get("group") || "").trim());
-      closeModal(); location.hash = "/dialogues"; render();
+      closeModal(); location.hash = "/dialogues";
       notify(`Импортировано: ${result.imported}. Пропущено: ${result.skipped}.`);
     } else if (form.id === "appeal-form" && appealTarget) {
       await submitAppeal({ conversationId: appealTarget.conversationId, evaluationId: appealTarget.evaluation.id,
@@ -761,18 +766,22 @@ document.addEventListener("submit", async (event) => {
         data.get("value") === "na" ? null : Number(data.get("value")),
         String(data.get("reason") || "").trim(), String(data.get("reviewer") || "").trim(),
         String(data.get("evidence") || ""), String(data.get("range-start") || ""), String(data.get("range-end") || ""));
-      appealStatus = "resolved"; render(); notify("Решение сохранено. Итоговая оценка пересчитана.");
+      appealStatus = "resolved"; notify("Решение сохранено. Итоговая оценка пересчитана.");
     } else if (form.id === "checklist-form") {
       const problem = validateChecklist(draft);
       if (problem) throw new Error(problem);
       draft = structuredClone(await saveChecklist(draft));
       draftDirty = false; render(); notify(`Чек-лист сохранён · версия ${draft.version}`);
     }
+    saved = true;
   } catch (error) { showError(errors[form.id], errorMessage(error)); }
   finally {
     pendingForms.delete(form.id);
     controls.forEach((c, i) => c.disabled = previouslyDisabled[i]);
     if (form.id === "checklist-form" && externalSubmit?.isConnected) externalSubmit.disabled = !draftDirty;
+    if (["upload-form", "dataset-form", "resolve-form"].includes(form.id) && saved) {
+      await refreshWorkspace();
+    }
   }
 });
 function errorMessage(error: unknown) {
@@ -780,14 +789,33 @@ function errorMessage(error: unknown) {
   return error instanceof ApiError && error.status === 409
     ? `${message} Нажмите «Обновить данные», проверьте введённые значения и повторите действие.` : message;
 }
-async function refreshWorkspace() {
+function scheduleDialogueSearch() {
+  clearTimeout(searchTimer);
+  cancelWorkspaceLoad();
+  requestVersion++;
+  currentPage = 1;
+  const results = document.getElementById("dialogue-results");
+  if (results) results.innerHTML = empty("Ищем диалоги", "Обновляем результаты поиска.");
+  searchTimer = setTimeout(() => void refreshWorkspace(true), 300);
+}
+async function refreshWorkspace(resultsOnly = false) {
   if (loaded && (busy.size || pendingForms.size)) { notify("Дождитесь завершения текущей операции."); return; }
-  if (loaded && loading) return;
+  clearTimeout(searchTimer);
+  const version = ++requestVersion;
+  const requestedRoute = route();
+  if (loadedRoute !== requestedRoute.raw) resultsOnly = false;
   const resolveForm = document.getElementById("resolve-form") as HTMLFormElement | null;
   const savedForm = resolveForm ? {id: resolveForm.dataset.id, entries: Array.from(new FormData(resolveForm).entries())} : null;
-  loading = true; loadError = ""; render();
+  loading = true; loadError = "";
+  if (!resultsOnly) render();
+  else { const results = document.getElementById("dialogue-results"); if (results) results.innerHTML = empty("Загружаем диалоги", "Обновляем результаты."); }
   try {
-    await loadWorkspace(); loaded = true;
+    const committed = await loadWorkspace(requestedRoute.section, requestedRoute.id, {
+      ...filters, page: currentPage, status: requestedRoute.section === "appeals" ? appealStatus : filters.status,
+    });
+    if (!committed || version !== requestVersion || route().raw !== requestedRoute.raw) return;
+    loaded = true; loadedRoute = requestedRoute.raw;
+    if (requestedRoute.section === "appeals") appealStatus = getState().appealStatus;
     if (appealTarget && modal.open && document.getElementById("appeal-form")) {
       const target = appealTarget;
       const evaluation = getState().conversations.find(c => c.id === target.conversationId)?.evaluations.find(e => e.id === target.evaluation.id);
@@ -805,9 +833,19 @@ async function refreshWorkspace() {
       draft = structuredClone(latestChecklist());
       editorSelection = draft.criteria[0]?.id || "";
     }
-  } catch (error) { loadError = errorMessage(error); }
+  } catch (error) {
+    if (version !== requestVersion || route().raw !== requestedRoute.raw) return;
+    loadError = errorMessage(error);
+    // Never present the previous page/filter as the result of a failed request.
+    loadedRoute = "";
+  }
   finally {
-    loading = false; render();
+    if (version !== requestVersion || route().raw !== requestedRoute.raw) return;
+    loading = false;
+    if (resultsOnly && !loadError) {
+      const results = document.getElementById("dialogue-results");
+      if (results) results.innerHTML = dialogueResults(filters);
+    } else render();
     const form = document.getElementById("resolve-form") as HTMLFormElement | null;
     if (savedForm && form && form.dataset.id === savedForm.id) {
       for (const [name, value] of savedForm.entries) {
@@ -861,12 +899,18 @@ export function validateChecklist(c: Checklist): string | null {
   return null;
 }
 window.addEventListener("hashchange", () => {
-  if (pendingForms.size) return;
+  if (pendingForms.size || busy.size) {
+    if (route().raw !== loadedRoute) location.hash = loadedRoute;
+    return;
+  }
   if (location.hash === "#main-content") {
     document.getElementById("main-content")?.focus();
     return;
   }
-  render();
+  currentPage = routePage();
+  filters = {search: "", language: "all", channel: "all", status: new URLSearchParams(route().query).get("status") || "all"};
+  if (route().section === "appeals") appealStatus = new URLSearchParams(route().query).get("status") || appealStatus;
+  void refreshWorkspace();
   window.scrollTo({ top: 0 });
 });
 window.addEventListener("beforeunload", (event) => {
@@ -875,4 +919,11 @@ window.addEventListener("beforeunload", (event) => {
     event.returnValue = "";
   }
 });
+function routePage() {
+  const value = Number(new URLSearchParams(route().query).get("page") || 1);
+  return Number.isInteger(value) && value >= 1 && value <= 100000 ? value : 1;
+}
+currentPage = routePage();
+filters.status = new URLSearchParams(route().query).get("status") || "all";
+if (route().section === "appeals") appealStatus = new URLSearchParams(route().query).get("status") || "open";
 void refreshWorkspace();

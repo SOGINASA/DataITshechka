@@ -198,6 +198,46 @@ def specification():
                   ('dataset_group_id', 'received', 'imported', 'pending', 'skipped', 'dry_run')),
               obj({'group_id': {**text(24), 'pattern': '^[A-Za-z0-9_-]+$'}, 'dry_run': {'type': 'boolean'}}, ('group_id',)), success_code='200')
     operation('/api/stats', 'get', 'Счётчики диалогов, оценок и пересмотров', obj({}, strict=False))
+    number_or_null = {'type': ['number', 'null']}
+    count = {'type': 'integer', 'minimum': 0}
+    summary = obj({'id': identifier, 'external_id': text(160, True), 'title': text(200),
+                   'operator_name': text(120, True), 'channel': enum('chat', 'call'), 'language': enum('ru', 'kk', 'en'),
+                   'created_at': timestamp, 'evaluation_id': text(36, True), 'checklist_id': text(36, True),
+                   'assessed': {'type': 'boolean'}, 'final_score': number_or_null, 'open_appeals': count})
+    summary['required'] = list(summary['properties'])
+    schemas['WorkspaceConversation'] = summary
+    row = obj({key: appeal['properties'][key] for key in ('id', 'evaluation_id', 'criterion_id', 'status', 'created_at')})
+    row['properties'].update(conversation_id=identifier, operator_name=text(120, True), criterion_name=text(200))
+    row['required'] = list(row['properties'])
+    schemas['WorkspaceAppeal'] = row
+    bundle = obj({'conversation': ref('Conversation'), 'evaluations': array(ref('Evaluation')),
+                  'checklists': array(ref('Checklist')), 'appeals': array(ref('Appeal')), 'reviews': array(ref('Review'))},
+                 ('conversation', 'evaluations', 'checklists', 'appeals', 'reviews'))
+    schemas['WorkspaceDetail'] = bundle
+    page_filters = {name: {'type': 'integer', 'minimum': 1, 'maximum': maximum, 'default': default}
+                    for name, maximum, default in [('page', 100000, 1), ('per_page', 100, 20)]}
+    operation('/api/workspace/overview', 'get', 'Готовая сводка, 6 диалогов и 4 апелляции без транскриптов',
+              obj({'total': count, 'assessed': count, 'attention': count, 'average': number_or_null, 'open_appeals': count,
+                   'recent': array(ref('WorkspaceConversation'), 6), 'appeals': array(ref('WorkspaceAppeal'), 4),
+                   'trend': array(obj({'date': {'type': 'string', 'format': 'date'}, 'value': number_or_null}, ('date', 'value')), 7),
+                   'criteria': array(obj({'name': text(200), 'value': number_or_null}, ('name', 'value')), 5)},
+                  ('total', 'assessed', 'attention', 'average', 'open_appeals', 'recent', 'appeals', 'trend', 'criteria')))
+    operation('/api/workspace/conversations', 'get', 'Страница диалогов с последней оценкой и фильтрами',
+              obj({'items': array(ref('WorkspaceConversation'), 100), 'pagination': ref('Pagination'), 'open_appeals': count},
+                  ('items', 'pagination', 'open_appeals')),
+              filters={**page_filters, 'search': text(200, minimum=0), 'language': enum('all', 'ru', 'kk', 'en'),
+                       'channel': enum('all', 'chat', 'call'), 'status': enum('all', 'assessed', 'pending', 'attention', 'appeal')})
+    detail_response = deepcopy(bundle)
+    detail_response['properties']['open_appeals'] = count
+    detail_response['required'].append('open_appeals')
+    operation('/api/workspace/conversations/{conversation_id}', 'get', 'Карточка одного диалога с историей и чек-листами', detail_response)
+    operation('/api/workspace/appeals', 'get', 'Страница апелляций и контекст выбранного разговора',
+              obj({'items': array(ref('WorkspaceAppeal'), 100), 'pagination': ref('Pagination'), 'open_appeals': count,
+                   'status': enum('all', 'open', 'resolved'), 'selected_id': text(36, True),
+                   'detail': {'anyOf': [ref('WorkspaceDetail'), {'type': 'null'}]}},
+                  ('items', 'pagination', 'open_appeals', 'status', 'selected_id', 'detail')),
+              filters={**page_filters, 'status': enum('all', 'open', 'resolved'),
+                       'selected': {**identifier, 'description': 'При прямом переходе выбирает апелляцию и её статус.'}})
     return {'openapi': '3.1.0', 'info': {'title': 'CQA API', 'version': '1.1.0',
             'description': 'Прототип без авторизации: официальный чек-лист, шкалы, N/A, апелляции и локальный Ollama.'},
             'servers': [{'url': '/'}], 'security': [], 'paths': paths, 'components': {'schemas': schemas}}

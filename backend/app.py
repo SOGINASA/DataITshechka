@@ -38,6 +38,8 @@ def create_app(config_object=None):
     migrate.init_app(app, db, directory=str(ROOT / 'migrations'))
     from routes import cqa_bp
     app.register_blueprint(cqa_bp, url_prefix='/api')
+    from routes.workspace import workspace_bp
+    app.register_blueprint(workspace_bp, url_prefix='/api/workspace')
     from services.ollama import AssessmentError
     from services.freedom import IntegrationError, ImportConflict
 
