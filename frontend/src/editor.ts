@@ -1,6 +1,6 @@
 import type { Checklist, Criterion } from "./types.js";
 import { getState } from "./state.js";
-import { esc, icon, options } from "./ui.js";
+import { esc, icon, options, brandArt } from "./ui.js";
 import { criterionLabel } from "./review.js";
 export function criterionMaster(draft: Checklist, selectedId: string) {
   return `<div class="criteria-master-list">${draft.criteria.map((c, i) => `<button type="button" class="criterion-master-item ${c.id === selectedId ? "selected" : ""}" data-action="select-editor-criterion" data-id="${esc(c.id)}" aria-pressed="${c.id === selectedId}"><span class="criterion-index">${String(i + 1).padStart(2, "0")}</span><strong data-title="${esc(c.id)}">${esc(criterionLabel(c))}</strong><span data-weight="${esc(c.id)}">${c.type === "flag" ? "Флаг" : `${Number.isFinite(c.weight) ? c.weight : "—"}%`}</span></button>`).join("")}</div>`;
@@ -14,7 +14,7 @@ export function checklistView(
   const { checklists } = getState();
   const selected =
     draft.criteria.find((c) => c.id === selectedId) || draft.criteria[0];
-  return `<div class="page-heading"><h1>Чек-листы</h1><div class="checklist-toolbar"><label for="checklist-version" class="sr-only">Сохранённая версия чек-листа</label><select id="checklist-version">${[
+  return `<div class="page-heading"><h1 class="page-title">${brandArt("checklist")}Чек-листы</h1><div class="checklist-toolbar"><label for="checklist-version" class="sr-only">Сохранённая версия чек-листа</label><select id="checklist-version">${[
     ...checklists,
   ]
     .reverse()

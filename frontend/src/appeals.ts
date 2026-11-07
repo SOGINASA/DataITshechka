@@ -1,6 +1,6 @@
 import { getState } from "./state.js";
 import { answerLabel, finalValue, formatScore, score } from "./scoring.js";
-import { date, empty, esc, href, icon, valueOptions } from "./ui.js";
+import { date, empty, esc, href, icon, valueOptions, brandArt } from "./ui.js";
 import { criterionLabel, elapsed, clock, usesDemoAudio } from "./review.js";
 export function appealsView(status = "open", selectedId = "") {
   const { appeals, conversations } = getState();
@@ -8,7 +8,7 @@ export function appealsView(status = "open", selectedId = "") {
     (a) => status === "all" || a.status === status,
   );
   const selected = appeals.find((a) => a.id === selectedId) || filtered[0];
-  return `<div class="page-heading"><h1>Апелляции</h1><span class="muted">${appeals.filter((a) => a.status === "open").length} на рассмотрении</span></div><div class="appeals-layout ${selectedId ? "appeal-show-detail" : "appeal-show-list"}"><section class="appeals-list-panel"><div class="appeal-tabs segmented"><button data-action="appeal-filter" data-status="open" class="${status === "open" ? "active" : ""}" aria-pressed="${status === "open"}">Открытые</button><button data-action="appeal-filter" data-status="resolved" class="${status === "resolved" ? "active" : ""}" aria-pressed="${status === "resolved"}">Решённые</button><button data-action="appeal-filter" data-status="all" class="${status === "all" ? "active" : ""}" aria-pressed="${status === "all"}">Все</button></div>${
+  return `<div class="page-heading"><h1 class="page-title">${brandArt("appeals")}Апелляции</h1><span class="muted">${appeals.filter((a) => a.status === "open").length} на рассмотрении</span></div><div class="appeals-layout ${selectedId ? "appeal-show-detail" : "appeal-show-list"}"><section class="appeals-list-panel"><div class="appeal-tabs segmented"><button data-action="appeal-filter" data-status="open" class="${status === "open" ? "active" : ""}" aria-pressed="${status === "open"}">Открытые</button><button data-action="appeal-filter" data-status="resolved" class="${status === "resolved" ? "active" : ""}" aria-pressed="${status === "resolved"}">Решённые</button><button data-action="appeal-filter" data-status="all" class="${status === "all" ? "active" : ""}" aria-pressed="${status === "all"}">Все</button></div>${
     filtered.length
       ? filtered
           .map((a) => {

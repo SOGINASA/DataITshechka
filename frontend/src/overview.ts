@@ -1,6 +1,6 @@
 import { getState } from "./state.js";
 import { finalValue, normalized, score, formatScore } from "./scoring.js";
-import { esc, href, icon, heading, table, uploadButton } from "./ui.js";
+import { esc, href, icon, heading, table, uploadButton, brandArt } from "./ui.js";
 export function overviewView() {
   const { conversations, appeals } = getState();
   const assessed = conversations.filter((c) => c.evaluations.length);
@@ -19,10 +19,10 @@ export function overviewView() {
     heading("", "Обзор", "", uploadButton()) +
     `
     <div class="stats-strip" aria-label="Сводка качества">
-      <div class="stat-item"><span>Средняя оценка</span><strong>${formatScore(average)}<small> / 100</small></strong></div>
-      <a class="stat-item" href="#/dialogues"><span>Оценено диалогов</span><strong>${assessed.length}<small> из ${conversations.length}</small></strong></a>
-      <a class="stat-item" href="#/dialogues?status=attention"><span>Ниже 80 баллов</span><strong>${attention.length}</strong></a>
-      <a class="stat-item" href="#/appeals"><span>Открытые апелляции</span><strong>${pending.length}</strong></a>
+      <div class="stat-item stat-primary"><span>Средняя оценка</span><strong>${formatScore(average)}<small> / 100</small></strong><span class="stat-meter" aria-hidden="true"><i style="width:${average ?? 0}%"></i></span></div>
+      <a class="stat-item" href="#/dialogues">${brandArt("checklist")}<span>Оценено диалогов</span><strong>${assessed.length}<small> из ${conversations.length}</small></strong></a>
+      <a class="stat-item stat-attention" href="#/dialogues?status=attention">${brandArt("dialogues")}<span>Ниже 80 баллов</span><strong>${attention.length}</strong></a>
+      <a class="stat-item" href="#/appeals">${brandArt("appeals")}<span>Открытые апелляции</span><strong>${pending.length}</strong></a>
     </div>
     <div class="overview-workspace">
       <section class="panel recent-panel"><div class="panel-heading"><h2>Последние диалоги</h2><a href="#/dialogues" class="text-link">Все ${conversations.length}${icon("arrow", 17)}</a></div>${table([...conversations].sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf()).slice(0, 6))}</section>
