@@ -167,6 +167,8 @@ ID реплики в примере условный: используйте р�
 
 ## Docker Compose
 
+Настройка VPS, `.env`, PostgreSQL и автодеплоя только бэкенда: [deploy/README.md](deploy/README.md).
+
 Задайте `POSTGRES_PASSWORD` в `.env`, затем `docker compose up --build -d`. Миграции и начальный официальный чек-лист применяются при старте контейнера. Данные хранятся в существующем томе `postgres_data`; локальная SQLite не переносится в PostgreSQL автоматически.
 
 Для импорта: `docker compose exec backend flask --app app:create_app import-dataset --group DEV`.
