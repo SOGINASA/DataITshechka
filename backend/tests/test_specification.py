@@ -65,6 +65,23 @@ def test_official_scoring_and_flag(client, official_evaluation):
     assert no_flag.json['evaluation']['gross_error_detected'] is False
 
 
+def test_model_status_is_derived_from_valid_configured_value(official):
+    evidence = {'evidence_message_ids': ['m1']}
+    response = [{'criterion_id': 'consultation', 'status': 'pass', 'value': 15, 'explanation': 'Ответ по существу.', **evidence},
+                {'criterion_id': 'contact', 'status': 'fail', 'value': True, 'explanation': 'Контакт установлен.', **evidence},
+                {'criterion_id': 'gross_errors', 'status': 'pass', 'value': True, 'explanation': 'Нарушение выявлено.', **evidence}]
+    normalized = ollama.normalize_model_status(response, official['criteria'])
+    assert normalized[0]['status'] == 'scored'
+    assert normalized[1]['status'] == 'pass'
+    assert normalized[2]['status'] == 'fail'
+
+
+def test_model_decision_without_evidence_is_saved_for_manual_review(official):
+    response = [{'criterion_id': 'contact', 'status': 'pass', 'value': True, 'explanation': 'Всё хорошо.'}]
+    normalized = ollama.normalize_model_status(response, official['criteria'])
+    assert normalized[0]['status'] == 'needs_review' and normalized[0]['value'] is None
+
+
 @pytest.mark.parametrize('criterion', ['contact', 'empathy', 'dialogue_management', 'gross_errors'])
 def test_official_na_restrictions(client, official_evaluation, criterion):
     response = submit(client, official_evaluation, [{'criterion_id': criterion, 'status': 'not_applicable',
@@ -236,6 +253,7 @@ def model_results():
 
 def test_ollama_structured_output_and_dynamic_rubric(app, client, official_evaluation, monkeypatch):
     app.config['OLLAMA_MODEL'] = 'synthetic-test-model'
+    app.config['OLLAMA_THINK'] = False
     captured = []
     mock_ollama(monkeypatch, model_results(), inspect=lambda payload: captured.append(payload))
     response = client.post(f'/api/conversations/{official_evaluation["conversation_id"]}/evaluations',
@@ -245,6 +263,7 @@ def test_ollama_structured_output_and_dynamic_rubric(app, client, official_evalu
     assert result['engine'] == 'ollama:synthetic-test-model' and result['score'] == 85.38
     assert result['results'][0]['source'] == 'model'
     assert result['run_metadata']['eval_count'] == 40 and result['run_metadata']['calls'] == 1
+    assert captured[0]['think'] is False
     request_content = json.loads(captured[0]['messages'][1]['content'])
     assert len(request_content['criteria']) == 8
     assert 'recording_url' not in request_content and 'source_metadata' not in request_content

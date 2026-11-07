@@ -79,10 +79,20 @@ test("evaluation config is an immutable snapshot including N/A and scale rubrics
 });
 test("imports accept organizer envelope and reject malformed roles, duplicates, unsafe audio", () => {
   const record = JSON.parse(importExample)[0];
+  const detect = (language, text) => parseImport(JSON.stringify([{...record, language, transcript: [{timestamp: "00:00", speaker: "client", text}]}]))[0].language;
+  assert.equal(detect(undefined, "Қай жерін басамын? Иә, қосыңызшы"), "KZ");
+  assert.equal(detect(undefined, "Здравствуйте, где настройки?"), "RU");
+  assert.equal(detect(undefined, "Hello, where are settings?"), "EN");
+  assert.equal(detect("EN", "Здравствуйте"), "EN");
+  const ml2Record = parseImport(JSON.stringify({conversation_id: "p1-kz-010", channel: "chat", language: "kk", messages: [{id: "m1", timestamp: "00:00", speaker: "client", text: "Қай жерін басамын?"}]}))[0];
+  assert.equal(ml2Record.language, "KZ");
+  assert.equal(ml2Record.channel, "agent chat");
+  assert.equal(ml2Record.transcript[0].id, "m1");
   assert.equal(
     parseImport(JSON.stringify({ data: { records: [record] } })).length,
     1,
   );
+  assert.equal(parseImport(JSON.stringify(record)).length, 1);
   assert.throws(
     () => parseImport(JSON.stringify([record, record])),
     /повторяется/,

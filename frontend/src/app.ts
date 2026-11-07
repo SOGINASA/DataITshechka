@@ -71,6 +71,93 @@ let appealTarget: {
 } | null = null;
 let switchTarget = "";
 const busy = new Set<string>();
+const evaluationJobs = new Map<string, {startedAt: number; checklistId: string; engine: string}>();
+const evaluationRecoveryKey = "freedom-cqa:evaluation-recovery:v1";
+const evaluationErrorPrefix = "freedom-cqa:evaluation-error:v1:";
+const evaluationErrors = new Map<string, string>();
+interface StoredEvaluationJob {
+  conversationId: string; startedAt: number; checklistId: string; engine: string; previousEvaluationIds: string[];
+}
+let evaluationTimer: ReturnType<typeof setInterval> | undefined;
+let recoveryTimer: ReturnType<typeof setInterval> | undefined;
+let recoveredEvaluationJob: StoredEvaluationJob | undefined;
+function getEvaluationError(id: string) {
+  const cached = evaluationErrors.get(id);
+  if (cached) return cached;
+  try { return localStorage.getItem(evaluationErrorPrefix + id) || ""; } catch { return ""; }
+}
+function setEvaluationError(id: string, message: string) {
+  evaluationErrors.set(id, message);
+  try { localStorage.setItem(evaluationErrorPrefix + id, message); } catch { /* UI still shows the in-memory error. */ }
+}
+function clearEvaluationError(id: string) {
+  evaluationErrors.delete(id);
+  try { localStorage.removeItem(evaluationErrorPrefix + id); } catch { /* Ignore unavailable storage. */ }
+}
+function storedEvaluationJob(): StoredEvaluationJob | undefined {
+  try {
+    const value = JSON.parse(localStorage.getItem(evaluationRecoveryKey) || "null") as StoredEvaluationJob | null;
+    if (!value || typeof value.conversationId !== "string" || !Number.isFinite(value.startedAt)
+        || typeof value.checklistId !== "string" || typeof value.engine !== "string"
+        || !Array.isArray(value.previousEvaluationIds)) return undefined;
+    return value;
+  } catch { return undefined; }
+}
+function clearStoredEvaluationJob() {
+  localStorage.removeItem(evaluationRecoveryKey);
+  recoveredEvaluationJob = undefined;
+  if (recoveryTimer) { clearInterval(recoveryTimer); recoveryTimer = undefined; }
+}
+function startEvaluationRecovery(job: StoredEvaluationJob) {
+  if (recoveryTimer) clearInterval(recoveryTimer);
+  recoveredEvaluationJob = job;
+  evaluationJobs.set(job.conversationId, {startedAt: job.startedAt, checklistId: job.checklistId, engine: job.engine});
+  busy.add(job.conversationId);
+  if (!evaluationTimer) evaluationTimer = setInterval(updateEvaluationElapsed, 1000);
+  recoveryTimer = setInterval(() => void checkRecoveredEvaluation(), 5000);
+}
+async function checkRecoveredEvaluation() {
+  const job = recoveredEvaluationJob;
+  if (!job) return;
+  // The local Ollama request has a hard five minute limit. Leave a short margin for saving and polling.
+  if (Date.now() - job.startedAt > 330_000) {
+    clearStoredEvaluationJob();
+    busy.delete(job.conversationId);
+    evaluationJobs.delete(job.conversationId);
+    if (!evaluationJobs.size && evaluationTimer) { clearInterval(evaluationTimer); evaluationTimer = undefined; }
+    if (route().section === "dialogues" && route().id === job.conversationId) {
+      await refreshWorkspace();
+      const message = "Оценка не завершилась за 5 минут и не была сохранена. Проверьте доступность модели и запустите её снова.";
+      setEvaluationError(job.conversationId, message);
+      render();
+      notify(message, "error");
+    }
+    return;
+  }
+  try {
+    await loadWorkspace("dialogues", job.conversationId);
+    const conversation = getState().conversations.find(item => item.id === job.conversationId);
+    const evaluation = conversation?.evaluations.find(item => item.checklist.id === job.checklistId
+      && !job.previousEvaluationIds.includes(item.id));
+    if (!evaluation) return;
+    selectedEvaluation = evaluation.id;
+    clearStoredEvaluationJob();
+    busy.delete(job.conversationId);
+    evaluationJobs.delete(job.conversationId);
+    if (!evaluationJobs.size && evaluationTimer) { clearInterval(evaluationTimer); evaluationTimer = undefined; }
+    if (route().section === "dialogues" && route().id === job.conversationId) {
+      loaded = true; loadedRoute = route().raw; loading = false; render();
+      notify("Оценка сохранена");
+    }
+  } catch { /* Keep the recovery marker; the next poll can retry a temporary API failure. */ }
+}
+function updateEvaluationElapsed() {
+  const job = [...evaluationJobs.values()][0];
+  const output = document.getElementById("evaluation-elapsed");
+  if (!job || !output) return;
+  const seconds = Math.floor((Date.now() - job.startedAt) / 1000);
+  output.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
 function route() {
   const raw = location.hash.slice(1) || "/overview";
   const [path, query = ""] = raw.split("?");
@@ -108,7 +195,7 @@ function render() {
   else if (r.section === "dialogues" && r.id) {
     const c = conversations.find((c) => c.id === r.id);
     content = c
-      ? detailView(c, selectedEvaluation, selectedCriterion)
+      ? detailView(c, selectedEvaluation, selectedCriterion, evaluationJobs.get(c.id), getEvaluationError(c.id))
       : empty(
           "Диалог не найден",
           "Откройте диалог из рабочего пространства.",
@@ -294,7 +381,7 @@ function uploadModal() {
   openModal(
     "Загрузить диалоги",
     "Добавьте транскрипты в рабочее пространство для оценки.",
-    `<form id="upload-form"><input type="file" id="json-file" accept=".json,application/json" hidden aria-label="JSON-файл с диалогами"><button class="upload-zone" type="button" data-action="choose-file"><span class="upload-icon">${icon("file", 26)}</span><strong id="upload-filename">Выберите JSON-файл</strong><span>Массив диалогов или ответ API · до 4 МиБ</span><span class="button secondary small">${icon("upload", 15)}Выбрать файл</span></button><div class="field"><div class="field-heading"><label for="json-input">Или вставьте JSON</label><button type="button" class="text-button" data-action="import-example">Вставить пример</button></div><textarea id="json-input" class="code-input" rows="7" required placeholder='[ { "conversation_id": "…", "transcript": […] } ]'></textarea></div><p id="import-error" class="form-error" role="alert" hidden></p><div class="modal-footer"><span class="muted">Данные сохраняются на сервере. До 100 диалогов за один импорт.</span><button type="submit" class="button primary">Добавить диалоги${icon("arrow", 16)}</button></div></form>`,
+    `<form id="upload-form"><input type="file" id="json-file" accept=".json,application/json" hidden aria-label="JSON-файл с диалогами"><button class="upload-zone" type="button" data-action="choose-file"><span class="upload-icon">${icon("file", 26)}</span><strong id="upload-filename">Выберите JSON-файл</strong><span>Массив диалогов или ответ API · до 4 МиБ</span><span class="button secondary small">${icon("upload", 15)}Выбрать файл</span></button><div class="field"><div class="field-heading"><label for="json-input">Или вставьте JSON</label><button type="button" class="text-button" data-action="import-example">Вставить пример</button></div><textarea id="json-input" class="code-input" rows="7" required placeholder='[ { "conversation_id": "…", "transcript": […] } ]'></textarea><span class="muted">Если поле <code>language</code> отсутствует или равно <code>auto</code>, язык определится по репликам.</span></div><p id="import-error" class="form-error" role="alert" hidden></p><div class="modal-footer"><span class="muted">Данные сохраняются на сервере. До 100 диалогов за один импорт.</span><button type="submit" class="button primary">Добавить диалоги${icon("arrow", 16)}</button></div></form>`,
     true,
   );
   modal.insertAdjacentHTML("beforeend", `<details><summary>Импорт набора организатора</summary><form id="dataset-form"><div class="field"><label for="dataset-group">ID набора</label><input id="dataset-group" name="group" value="DEV" required maxlength="80"></div><p id="dataset-error" class="form-error" role="alert" hidden></p><button class="button secondary" type="submit">Импортировать набор</button></form></details>`);
@@ -649,15 +736,41 @@ document.addEventListener("click", async (event) => {
     const checklistId = (
       document.getElementById("evaluation-checklist") as HTMLSelectElement
     ).value;
-    busy.add(id);
-    setEvaluationBusy(id);
     const engine = (document.getElementById("evaluation-engine") as HTMLSelectElement).value;
+    clearEvaluationError(id);
+    const job: StoredEvaluationJob = {conversationId: id, startedAt: Date.now(), checklistId, engine,
+      previousEvaluationIds: getState().conversations.find(item => item.id === id)?.evaluations.map(item => item.id) || []};
+    localStorage.setItem(evaluationRecoveryKey, JSON.stringify(job));
+    evaluationJobs.set(id, {startedAt: job.startedAt, checklistId, engine});
+    busy.add(id);
+    render();
+    if (!evaluationTimer) evaluationTimer = setInterval(updateEvaluationElapsed, 1000);
+    updateEvaluationElapsed();
+    let keepRecovery = false;
     try {
       const evaluation = await evaluate(id, checklistId, engine);
+      clearStoredEvaluationJob();
+      clearEvaluationError(id);
       selectedEvaluation = evaluation.id;
       notify(evaluation.needsReview ? "Оценка сохранена. Есть критерии для ручной проверки." : "Оценка сохранена");
-    } catch (error) { notify(errorMessage(error), "error"); }
-    finally { busy.delete(id); render(); }
+    } catch (error) {
+      const message = errorMessage(error);
+      setEvaluationError(id, message);
+      notify(message, "error");
+      if (error instanceof ApiError && error.status === 0) {
+        keepRecovery = true;
+        startEvaluationRecovery(job);
+      }
+    }
+    finally {
+      if (!keepRecovery) {
+        clearStoredEvaluationJob();
+        busy.delete(id);
+        evaluationJobs.delete(id);
+        if (!evaluationJobs.size && evaluationTimer) { clearInterval(evaluationTimer); evaluationTimer = undefined; }
+      }
+      render();
+    }
   }
   if (action === "appeal") {
     const c = getState().conversations.find((c) => c.id === route().id);
@@ -926,4 +1039,7 @@ function routePage() {
 currentPage = routePage();
 filters.status = new URLSearchParams(route().query).get("status") || "all";
 if (route().section === "appeals") appealStatus = new URLSearchParams(route().query).get("status") || "open";
+const pendingEvaluation = storedEvaluationJob();
+if (pendingEvaluation && Date.now() - pendingEvaluation.startedAt <= 330_000) startEvaluationRecovery(pendingEvaluation);
+else if (pendingEvaluation) localStorage.removeItem(evaluationRecoveryKey);
 void refreshWorkspace();

@@ -1305,6 +1305,24 @@ a.stat-item:hover strong {
   border-radius: 8px;
   overflow: hidden;
 }
+.evaluation-progress {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid #c7d9ef;
+  border-radius: 8px;
+  background: #f4f8fd;
+  color: var(--ink, #172b4d);
+}
+.evaluation-progress-heading { display: flex; align-items: center; gap: 12px; }
+.evaluation-progress-heading > div { display: grid; gap: 3px; }
+.evaluation-progress-heading > div > span { color: #53657c; font-size: 13px; }
+.evaluation-progress p { margin: 12px 0; font-size: 13px; line-height: 1.5; }
+.evaluation-progress ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.evaluation-progress li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.evaluation-progress li span { color: #53657c; white-space: nowrap; }
+.progress-spinner { width: 20px; height: 20px; flex: 0 0 20px; border: 2px solid #c7d9ef; border-top-color: #1670d2; border-radius: 50%; animation: evaluation-spin .8s linear infinite; }
+@keyframes evaluation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .progress-spinner { animation-duration: 2s; } }
 .review-workspace .panel-heading {
   min-height: 48px;
   padding: 10px 16px;
