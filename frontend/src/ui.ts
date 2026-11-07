@@ -119,7 +119,10 @@ export function heading(
   _text: string,
   action = "",
 ) {
-  return `<div class="page-heading"><h1>${esc(title)}</h1>${action}</div>`;
+  return `<div class="page-heading"><h1 class="page-title">${title === "Диалоги" ? brandArt("dialogues") : ""}${esc(title)}</h1>${action}</div>`;
+}
+export function brandArt(kind: "dialogues" | "checklist" | "appeals") {
+  return `<img class="brand-art" src="./assets/media/freedom-${kind}.png" width="64" height="64" alt="" aria-hidden="true" decoding="async">`;
 }
 export const uploadButton = () =>
   `<button class="button primary" data-action="upload">${icon("plus")}Загрузить диалоги</button>`;

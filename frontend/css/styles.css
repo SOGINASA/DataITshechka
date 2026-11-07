@@ -414,6 +414,23 @@ summary {
   font-size: 14px;
   line-height: 20px;
 }
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-art {
+  display: block;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+.conversation-header .brand-art {
+  width: 38px;
+  height: 38px;
+}
 .mobile-menu-button,
 .mobile-detail-tabs {
   display: none;
@@ -506,11 +523,15 @@ summary {
   gap: 16px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--line);
+  background: #edf3e9;
+  border-radius: 7px 7px 0 0;
 }
 .panel-heading h2 {
   font-size: 20px;
   line-height: 26px;
   letter-spacing: -0.2px;
+  color: #203d2a;
+  font-weight: 700;
 }
 .panel-heading p {
   font-size: 14px;
@@ -694,28 +715,59 @@ select {
   margin-top: 8px;
 }
 
-/* Overview: one data strip followed by work, statistics remain secondary. */
+/* Overview: distinct summary surfaces, with quieter work tables below. */
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-block: 1px solid var(--line);
-  padding: 22px 0;
+  gap: 12px;
   margin: 0 0 24px;
 }
 .stat-item {
-  padding: 0 24px;
-  border-left: 1px solid var(--line);
+  position: relative;
+  padding: 20px;
+  min-height: 154px;
+  border: 1px solid #cbd8ce;
+  border-radius: 14px;
+  background: #fff;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 16px;
 }
-.stat-item:first-child {
-  border: 0;
-  padding-left: 0;
+.stat-item.stat-primary {
+  background: #e1f1d5;
+  border-color: #bfd7ad;
 }
-.stat-item:last-child {
-  padding-right: 0;
+.stat-primary > strong {
+  color: #194f31;
+}
+.stat-item.stat-attention {
+  background: #fffaf0;
+  border-color: #e4d6b8;
+}
+.stat-attention > strong {
+  color: #815713;
+}
+.stat-item .brand-art {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  right: 10px;
+  bottom: 10px;
+}
+
+.stat-item > .stat-meter {
+  width: 100%;
+  height: 4px;
+  margin-top: auto;
+  border-radius: 4px;
+  background: #c1d7b5;
+}
+.stat-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #277941;
 }
 .stat-item > strong,
 .stat-number {
@@ -727,9 +779,10 @@ select {
 }
 .stat-item > span,
 .stat-label {
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #35473b;
 }
 .stat-item small,
 .stat-number span {
@@ -740,7 +793,11 @@ select {
   font-weight: 400;
   margin-left: 4px;
 }
-.stat-item:hover strong {
+a.stat-item:hover {
+  border-color: var(--green);
+  box-shadow: 0 3px 10px #173e2410;
+}
+a.stat-item:hover strong {
   color: var(--green);
 }
 .overview-workspace {
@@ -1857,6 +1914,8 @@ select {
 }
 
 .master-heading {
+  background: #edf3e9;
+  border-radius: 7px 7px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1912,6 +1971,8 @@ select {
   color: var(--muted);
 }
 .criterion-editor-header {
+  padding-bottom: 16px;
+  border-bottom: 2px solid #cfdfc5;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2075,6 +2136,8 @@ select {
   min-width: 0;
 }
 .appeal-detail-header {
+  background: #edf3e9;
+  border-radius: 7px 7px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2703,12 +2766,6 @@ select {
   .appeal-detail-content {
     padding: 20px;
   }
-  .stats-strip {
-    padding-block: 20px;
-  }
-  .stat-item {
-    padding-inline: 20px;
-  }
 }
 @media (max-width: 760px) {
   .overview-workspace {
@@ -2716,14 +2773,7 @@ select {
   }
   .stats-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 20px;
-  }
-  .stat-item {
-    padding: 0 20px;
-  }
-  .stat-item:nth-child(3) {
-    border-left: 0;
-    padding-left: 0;
+    gap: 12px;
   }
   .stat-item > strong,
   .stat-number {
@@ -2928,6 +2978,9 @@ select {
   }
 }
 @media (max-width: 600px) {
+  .page-heading:has(> .muted) {
+    flex-wrap: wrap;
+  }
   .main-content {
     padding: 20px 16px;
   }
@@ -2966,9 +3019,36 @@ select {
   }
   .stat-item {
     padding-inline: 16px;
+    min-height: 156px;
+    gap: 12px;
   }
   .stat-item > span {
     font-size: 14px;
+  }
+  .stat-item > span:not(.stat-meter) {
+    min-height: 44px;
+  }
+  .stat-item:not(.stat-primary) > span {
+    max-width: calc(100% - 34px);
+    min-height: 44px;
+  }
+  .stat-item .brand-art {
+    width: 44px;
+    height: 44px;
+    right: 6px;
+    top: 16px;
+    bottom: auto;
+  }
+  .page-title {
+    gap: 8px;
+  }
+  .page-title .brand-art {
+    width: 38px;
+    height: 38px;
+  }
+  .conversation-header .brand-art {
+    width: 32px;
+    height: 32px;
   }
   .panel-heading {
     padding: 16px;

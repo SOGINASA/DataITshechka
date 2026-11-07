@@ -11,7 +11,7 @@ import {
   score,
   scoreTone,
 } from "./scoring.js";
-import { empty, esc, href, icon, time } from "./ui.js";
+import { empty, esc, href, icon, time, brandArt } from "./ui.js";
 const labels: Record<string, string> = {
   greeting: "Контакт",
   need: "Потребность",
@@ -145,7 +145,7 @@ export function detailView(
   const cr = e ? focusCriterion(e, criterionId) : null;
   const index = e?.results.find((r) => r.criterionId === cr?.id)?.evidence[0];
   const { checklists } = getState();
-  return `<div class="conversation-page ${c.channel === "voice call" ? "has-player" : "chat-page"}"><div class="conversation-header"><div><h1>Анализ разговора</h1><p class="conversation-meta"><span>${esc(c.id)}</span><span>${c.language === "RU" ? "Русский" : c.language === "KZ" ? "Қазақша" : "English"}</span><span>${esc(c.operator)}</span><span>${usesDemoAudio(c) ? clock(demoWaveform.duration) : esc(c.duration)}</span></p></div><div class="conversation-controls"><label class="sr-only" for="evaluation-checklist">Чек-лист для оценки</label><select id="evaluation-checklist">${[
+  return `<div class="conversation-page ${c.channel === "voice call" ? "has-player" : "chat-page"}"><div class="conversation-header"><div><h1 class="page-title">${brandArt("dialogues")}Анализ разговора</h1><p class="conversation-meta"><span>${esc(c.id)}</span><span>${c.language === "RU" ? "Русский" : c.language === "KZ" ? "Қазақша" : "English"}</span><span>${esc(c.operator)}</span><span>${usesDemoAudio(c) ? clock(demoWaveform.duration) : esc(c.duration)}</span></p></div><div class="conversation-controls"><label class="sr-only" for="evaluation-checklist">Чек-лист для оценки</label><select id="evaluation-checklist">${[
     ...checklists,
   ]
     .reverse()
