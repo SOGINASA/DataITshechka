@@ -66,7 +66,7 @@ def load_runs(paths, dialogs):
         path = Path(path)
         manifest = read_json(path / 'manifest.json')
         summary = read_json(path / 'run_summary.json')
-        predictions = [loads(line) for line in (path / 'predictions.jsonl').read_text().splitlines() if line.strip()]
+        predictions = [loads(line) for line in (path / 'predictions.jsonl').read_text(encoding='utf-8').splitlines() if line.strip()]
         require(summary.get('predictions_hash') == digest(predictions), 'Run contents changed or are incomplete')
         require(manifest['model']['provider'] == 'ollama', 'Only measured local Ollama runs are supported here')
         models.add(text(manifest['model']['model'], 'model.name'))

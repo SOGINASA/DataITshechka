@@ -19,12 +19,12 @@ ROOT = Path(__file__).parent
 
 
 def jsonl(path):
-    return [loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    return [loads(line) for line in Path(path).read_text(encoding='utf-8').splitlines() if line.strip()]
 
 
 def code_hash():
     paths = sorted([*ROOT.glob('*.py'), *ROOT.glob('prompts/*.txt')])
-    return digest({str(p.relative_to(ROOT)): p.read_text() for p in paths})
+    return digest({p.relative_to(ROOT).as_posix(): p.read_text(encoding='utf-8') for p in paths})
 
 
 def initialize_run(out, manifest, resume):
@@ -49,7 +49,7 @@ def export_csv(predictions, output):
         if isinstance(value, str) and value.lstrip().startswith(('=', '+', '-', '@')):
             return "'" + value
         return value
-    with Path(output).open('x', newline='') as stream:
+    with Path(output).open('x', newline='', encoding='utf-8') as stream:
         columns = ['conversation_id', 'run_status', 'criterion_id', 'status', 'value', 'explanation',
                    'evidence_message_ids', 'reviewed_range', 'knowledge_refs', 'final_score', 'error']
         writer = csv.DictWriter(stream, fieldnames=columns)
@@ -93,10 +93,10 @@ def run(args):
         provider.deadline = time.monotonic() + budget - elapsed
     if not args.resume:
         write_json(out / 'knowledge.snapshot.json', kb.raw)
-        (out / 'prompt.txt').write_text(SYSTEM)
+        (out / 'prompt.txt').write_text(SYSTEM, encoding='utf-8')
     completed = {p['conversation_id'] for p in previous}
     failures = sum(p['status'] == 'error' for p in previous)
-    with (out / 'predictions.jsonl').open('a' if args.resume else 'x') as target:
+    with (out / 'predictions.jsonl').open('a' if args.resume else 'x', encoding='utf-8') as target:
         for i, dialog in enumerate(dialogs):
             if dialog['conversation_id'] in completed:
                 continue
@@ -171,7 +171,7 @@ def main(argv=None):
             require(bool(dialogs), 'No conversations selected')
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
-            with output.open('x') as stream:
+            with output.open('x', encoding='utf-8') as stream:
                 stream.write('\n'.join(canonical(d) for d in dialogs) + '\n')
             print(f'Saved {len(dialogs)} conversations; dataset hash {digest(dialogs)}')
         elif args.command == 'run':

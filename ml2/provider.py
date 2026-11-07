@@ -92,7 +92,8 @@ class Ollama:
             return loads(raw)
         except error.HTTPError as exc:
             code = exc.code
-            exc.close()
+            if exc.fp is not None:
+                exc.close()
             raise ModelError(f'Ollama HTTP {code}') from None
         except (OSError, error.URLError, ValueError) as exc:
             raise ModelError('Ollama unavailable, timeout or malformed response') from None

@@ -81,7 +81,32 @@ def response_schema(criteria, messages=()):
                     'required': list(properties), 'properties': properties}}}
 
 
-def assess(conversation, checklist, config, *, response_capture=None):
+def wire_configuration(conversation, checklist, wire_format='legacy'):
+    from services import decision_format
+    if wire_format == 'decision-reasoned':
+        from services import decision_reasoning
+        return decision_reasoning.SYSTEM, decision_reasoning.schema(checklist.criteria, conversation.messages), decision_reasoning.VERSION
+    if wire_format not in ('legacy', 'legacy-reversed', 'decision', 'decision-guided'):
+        raise AssessmentError('Unknown response wire format.', 503)
+    single_decision = wire_format in ('decision', 'decision-guided')
+    wire_version = decision_format.VERSION if single_decision else PROMPT_VERSION
+    system = decision_format.system_prompt(SYSTEM) if single_decision else SYSTEM
+    if wire_format == 'decision-guided':
+        from services.decision_guidance import GUIDANCE, VERSION
+        system += GUIDANCE
+        wire_version = VERSION
+    schema = (decision_format.schema(checklist.criteria, conversation.messages) if single_decision
+              else response_schema(checklist.criteria, conversation.messages))
+    if wire_format == 'legacy-reversed':
+        for item in schema['properties']['results']['properties'].values():
+            item['anyOf'].reverse()
+    return system, schema, wire_version
+
+
+def assess(conversation, checklist, config, *, response_capture=None, wire_format='legacy'):
+    from services import decision_format
+    system, schema, wire_version = wire_configuration(conversation, checklist, wire_format)
+    single_decision = wire_format in ('decision', 'decision-guided')
     model = config.get('OLLAMA_MODEL', '').strip()
     if not model or len(model) > 60:
         raise AssessmentError('Задайте OLLAMA_MODEL (имя установленной локальной модели, до 60 символов).', 503)
@@ -106,14 +131,18 @@ def assess(conversation, checklist, config, *, response_capture=None):
             or type(max_output) is not int or not 512 <= max_output <= 16384
             or max_output + 1024 >= context_size or type(timeout) is not int or not 1 <= timeout <= 300):
         raise AssessmentError('Проверьте OLLAMA_NUM_CTX, OLLAMA_NUM_PREDICT и OLLAMA_TIMEOUT.', 503)
-    content = json.dumps({'rubric_description': checklist.description, 'criteria': checklist.criteria,
+    task = {'rubric_description': checklist.description, 'criteria': checklist.criteria,
                           'language': conversation.language, 'channel': conversation.channel,
-                          'messages': conversation.messages}, ensure_ascii=False)
+                          'messages': conversation.messages}
+    if wire_format == 'decision-reasoned':
+        from services.decision_reasoning import initial_messages
+        task['initial_context'] = initial_messages(conversation.messages)
+    content = json.dumps(task, ensure_ascii=False)
     # Conservative upper bound: UTF-8 bytes rather than guessed tokens. Never truncate evidence.
-    if len((SYSTEM + content).encode('utf-8')) > context_size - max_output - 1024:
+    if len((system + content).encode('utf-8')) > context_size - max_output - 1024:
         raise AssessmentError('Диалог и чек-лист превышают безопасный лимит контекста. Увеличьте OLLAMA_NUM_CTX.', 422)
-    payload = {'model': model, 'stream': False, 'format': response_schema(checklist.criteria, conversation.messages),
-               'messages': [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': content}],
+    payload = {'model': model, 'stream': False, 'format': schema,
+               'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': content}],
                'options': {'temperature': 0, 'num_ctx': context_size, 'num_predict': max_output}}
     think = config.get('OLLAMA_THINK')
     if think is not None:
@@ -121,6 +150,7 @@ def assess(conversation, checklist, config, *, response_capture=None):
             raise AssessmentError('OLLAMA_THINK must be true, false or unset.', 503)
         payload['think'] = think
     started = time.monotonic()
+    assessment_facts = None
     req = request.Request(base + '/api/chat', data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
                           headers={'Content-Type': 'application/json', 'Accept': 'application/json'}, method='POST')
     if response_capture is not None:
@@ -147,8 +177,12 @@ def assess(conversation, checklist, config, *, response_capture=None):
         if not isinstance(envelope, dict) or envelope.get('done') is not True or envelope.get('done_reason') == 'length':
             raise AssessmentError('Ollama не завершила оценку; результат не сохранён.')
         document = json.loads(envelope['message']['content'])
-        obj(document, ('results',), ('results',))
-        raw_results = document['results']
+        if wire_format == 'decision-reasoned':
+            from services import decision_reasoning
+            raw_results, assessment_facts = decision_reasoning.decode(document, checklist.criteria, conversation.messages)
+        else:
+            obj(document, ('results',), ('results',))
+            raw_results = decision_format.decode(document, checklist.criteria) if single_decision else document['results']
         if isinstance(raw_results, dict):
             fields = ('status', 'value', 'explanation', 'evidence_message_ids', 'reviewed_range')
             raw_results = [{**obj(value, fields), 'criterion_id': cid} for cid, value in raw_results.items()]
@@ -182,11 +216,14 @@ def assess(conversation, checklist, config, *, response_capture=None):
         detail = str(exc) if isinstance(exc, ValidationError) else type(exc).__name__
         raise AssessmentError('Ответ Ollama не соответствует чек-листу или содержит неверные доказательства. ' + detail) from None
     metadata = {'model': model, 'prompt_version': PROMPT_VERSION, 'calls': 1,
+                'wire_format': wire_format, 'wire_version': wire_version,
                 'elapsed_seconds': round(time.monotonic() - started, 3),
                 'thinking_returned': bool(envelope.get('message', {}).get('thinking')),
                 'num_ctx': context_size, 'num_predict': max_output}
     if think is not None:
         metadata['think'] = think
+    if assessment_facts is not None:
+        metadata['assessment_facts'] = assessment_facts
     for field in ('prompt_eval_count', 'eval_count', 'total_duration'):
         if type(envelope.get(field)) is int and envelope[field] >= 0:
             metadata[field] = envelope[field]

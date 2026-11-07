@@ -18,6 +18,7 @@ yarn-error.log*
 CQA_Hackathon_Student_Guide_v3.pdf
 CQA_Chat_Quality_Checklist 1.pdf
 CQA_Student_Guide_Appendix_Results.pdf
+runs/
 data/raw/*
 
 # Private manual labels, dialogue exports, and Python caches

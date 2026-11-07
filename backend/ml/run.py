@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from ml.dataset import load_release, adapt_input, adapt_rubric, adapt_reference, sha256
 from ml.metrics import measure
 from services.evaluation import summarize
-from services.ollama import AssessmentError, assess, SYSTEM, PROMPT_VERSION, response_schema
+from services.ollama import AssessmentError, assess, wire_configuration
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -51,6 +51,7 @@ def main():
     parser.add_argument('--ids', help='Comma-separated exact conversation IDs')
     parser.add_argument('--prepare-only', action='store_true', help='Validate/export inputs; no model predictions')
     parser.add_argument('--resume', action='store_true', help='Continue same immutable configuration, including saved failures')
+    parser.add_argument('--wire-format', choices=['legacy', 'legacy-reversed', 'decision', 'decision-guided', 'decision-reasoned'], default='legacy')
     args = parser.parse_args()
     load_dotenv(ROOT / 'backend/.env')
     from config import Config
@@ -96,15 +97,20 @@ def main():
         profile = json.loads(profile_path.read_text(encoding='utf-8-sig'))
         runtime_profile = {k: profile[k] for k in ('flash_attention', 'kv_cache_type')}
     contract_hash = hashlib.sha256(json.dumps(prepared_rows, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    system, _, wire_version = wire_configuration(*next(iter(prepared.values())), args.wire_format)
     run_config = {'schema_version': 1, 'release_manifest_sha256': sha256(args.release / 'manifest.json'),
                   'release_version': manifest['release_version'], 'config': config,
-                  'model_digest': model['digest'], 'prompt_version': PROMPT_VERSION,
+                  'model_digest': model['digest'], 'prompt_version': wire_version, 'wire_format': args.wire_format,
                   'ollama_version': runtime_version, 'declared_local_runtime': runtime_profile,
-                  'prompt_sha256': hashlib.sha256(SYSTEM.encode()).hexdigest(),
+                  'prompt_sha256': hashlib.sha256(system.encode()).hexdigest(),
                   'adapter_sha256': sha256(Path(__file__).with_name('dataset.py')),
                   'engine_sha256': sha256(ROOT / 'backend/services/ollama.py'),
+                  'decision_format_sha256': sha256(ROOT / 'backend/services/decision_format.py'),
+                  'decision_guidance_sha256': sha256(ROOT / 'backend/services/decision_guidance.py'),
+                  'decision_reasoning_sha256': sha256(ROOT / 'backend/services/decision_reasoning.py'),
+                  'assessment_logic_sha256': sha256(ROOT / 'backend/services/assessment_logic.py'),
                   'prepared_inputs_sha256': contract_hash, 'conversation_ids': list(prepared),
-                  'schemas': {cid: response_schema(k.criteria, c.messages) for cid, (c, k) in prepared.items()},
+                  'schemas': {cid: wire_configuration(c, k, args.wire_format)[1] for cid, (c, k) in prepared.items()},
                   'independent_test': False, 'model_audio_input': False}
     manifest_path = target / 'run.json'
     if manifest_path.exists():
@@ -119,6 +125,8 @@ def main():
         write_json(target / 'references.json', references)
         snapshot_dir = target / 'code'
         for relative in ('ml/run.py', 'ml/dataset.py', 'ml/metrics.py', 'services/ollama.py',
+                         'services/decision_format.py', 'services/decision_guidance.py', 'services/decision_reasoning.py',
+                         'services/assessment_logic.py',
                          'services/evaluation.py', 'services/validation.py'):
             destination = snapshot_dir / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +144,7 @@ def main():
         conversation, rubric = prepared[cid]
         captured = {}
         try:
-            results, engine, metadata = assess(conversation, rubric, config, response_capture=captured)
+            results, engine, metadata = assess(conversation, rubric, config, response_capture=captured, wire_format=args.wire_format)
             prediction = {'state': 'ok', 'results': results, 'summary': summarize(results),
                           'engine': engine, 'metadata': metadata}
         except AssessmentError as exc:

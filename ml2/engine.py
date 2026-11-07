@@ -8,7 +8,7 @@ from .provider import ModelError
 from .scoring import summarize
 from .decoding import schema_for, decode
 
-SYSTEM = (Path(__file__).parent / 'prompts/system.txt').read_text()
+SYSTEM = (Path(__file__).parent / 'prompts/system.txt').read_text(encoding='utf-8')
 PROMPT_VERSION = 'ml2-cqa-5'
 
 

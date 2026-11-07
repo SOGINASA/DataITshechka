@@ -75,7 +75,7 @@ class RunTests(unittest.TestCase):
             export_csv([{'conversation_id': '=FORMULA()', 'status': 'error', 'error': 'timeout'},
                         {'conversation_id': 'two', 'status': 'ok', 'results': [
                             {'criterion_id': 'x', 'status': 'pass', 'value': True, 'explanation': 'Обоснование'}]}], path)
-            with path.open() as f:
+            with path.open(encoding='utf-8') as f:
                 rows = list(csv.DictReader(f))
             self.assertEqual(len(rows), 2)
             self.assertEqual(rows[0]['conversation_id'], "'=FORMULA()")
