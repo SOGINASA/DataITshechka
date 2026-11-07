@@ -6,6 +6,7 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
+User=root
 WorkingDirectory=/root/BimBomBam
 ExecStart=/usr/bin/bash /root/BimBomBam/backend/deploy/deploy.sh
 Environment=GIT_TERMINAL_PROMPT=0
