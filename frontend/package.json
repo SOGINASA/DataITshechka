@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
-    "test": "npm run build && node --test tests/*.test.mjs"
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:api": "npm run build && node scripts/test-api.mjs"
   },
   "devDependencies": {
     "tailwindcss": "3.4.19",

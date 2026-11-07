@@ -4,13 +4,6 @@ import { initialChecklist } from "../dist/js/checklist.js";
 import { createDemoEvaluation, initialConversations } from "../dist/js/data.js";
 import { score, validValue } from "../dist/js/scoring.js";
 import { parseImport, importExample } from "../dist/js/import.js";
-import {
-  getState,
-  resolveAppeal,
-  saveChecklist,
-  persist,
-  getPersistenceWarning,
-} from "../dist/js/state.js";
 function fullEvaluation() {
   return {
     id: "test-eval",
@@ -117,59 +110,6 @@ test("imports accept organizer envelope and reject malformed roles, duplicates, 
   );
   assert.throws(() => parseImport("{}"), /массив/);
 });
-test("review decision rejects unsupported scale steps and protects resolved appeals", () => {
-  const state = getState();
-  const a = state.appeals.find((a) => a.criterionId === "consultation");
-  assert.equal(resolveAppeal(a.id, "change", 17, "Invalid step"), false);
-  assert.equal(a.status, "open");
-  assert.equal(
-    resolveAppeal(a.id, "change", 20, "Полный ответ подтверждён контекстом."),
-    true,
-  );
-  assert.equal(resolveAppeal(a.id, "change", 0, "Overwrite"), false);
-  assert.equal(a.value, 20);
-});
-test("saving checklist creates a separate version without mutating old config", () => {
-  const before = structuredClone(getState().checklists[0]);
-  const draft = structuredClone(before);
-  draft.criteria[0].name = "Updated";
-  const saved = saveChecklist(draft);
-  draft.criteria[0].name = "Another change";
-  assert.equal(saved.version, 2);
-  assert.equal(saved.criteria[0].name, "Updated");
-  assert.deepEqual(getState().checklists[0], before);
-});
-
-test("storage failures are exposed as an explicit nonpersistent warning", () => {
-  const descriptor = Object.getOwnPropertyDescriptor(
-    globalThis,
-    "localStorage",
-  );
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: {
-      setItem() {},
-      getItem() {
-        return null;
-      },
-    },
-  });
-  assert.equal(persist(), true);
-  assert.equal(getPersistenceWarning(), null);
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: {
-      setItem() {
-        throw new Error("Quota exceeded");
-      },
-    },
-  });
-  assert.equal(persist(), false);
-  assert.match(getPersistenceWarning(), /только в этой вкладке/);
-  if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
-  else Reflect.deleteProperty(globalThis, "localStorage");
-});
-
 test("focused review prioritizes weighted loss and independent gross flag", async () => {
   const { focusCriterion } = await import("../dist/js/review.js");
   const e = fullEvaluation();

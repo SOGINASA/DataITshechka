@@ -15,8 +15,8 @@ export function parseImport(raw: string): Conversation[] {
     throw new Error(
       "Нужен непустой массив записей или ответ API с полем data.records.",
     );
-  if (records.length > 500)
-    throw new Error("За один раз можно добавить до 500 диалогов.");
+  if (records.length > 100)
+    throw new Error("За один раз можно добавить до 100 диалогов.");
   const ids = new Set();
   return records.map((record, index) => {
     const fail = (detail: string): never => {

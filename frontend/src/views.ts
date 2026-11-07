@@ -12,6 +12,7 @@ import {
   normalized,
   score,
   scoreTone,
+  isAssessed,
 } from "./scoring.js";
 import {
   conversationStatus,
@@ -45,8 +46,8 @@ export function filterConversations(filters: Filters) {
         (filters.language === "all" || filters.language === c.language) &&
         (filters.channel === "all" || filters.channel === c.channel) &&
         (filters.status === "all" ||
-          (filters.status === "pending" && !evaluation) ||
-          (filters.status === "assessed" && !!evaluation) ||
+          (filters.status === "pending" && !isAssessed(evaluation)) ||
+          (filters.status === "assessed" && isAssessed(evaluation)) ||
           (filters.status === "attention" && value !== null && value < 80) ||
           (filters.status === "appeal" &&
             appeals.some(

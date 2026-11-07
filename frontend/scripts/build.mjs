@@ -1,4 +1,4 @@
-import { mkdir, cp } from "node:fs/promises";
+import { mkdir, cp, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -25,4 +25,10 @@ await cp(resolve(root, "index.html"), resolve(root, "dist/index.html"));
 await cp(resolve(root, "assets"), resolve(root, "dist/assets"), {
   recursive: true,
 });
+if (process.env.PUBLIC_API_URL) {
+  const url = new URL(process.env.PUBLIC_API_URL);
+  if (!["https:", "http:"].includes(url.protocol) || url.username || url.password || url.search || url.hash)
+    throw new Error("PUBLIC_API_URL must be an HTTP(S) base URL without credentials, query or fragment");
+  await writeFile(resolve(root, "dist/js/config.js"), `export const API_BASE_URL = ${JSON.stringify(url.href.replace(/\/+$/, ""))};\n`);
+}
 console.log("Static frontend built in dist/");

@@ -69,8 +69,8 @@ PostgreSQL создаёт базу и пользователя при перво
 Миграции и официальный чек-лист применяются entrypoint. SQLite автоматически не переносится.
 Ollama в этот деплой не входит; без модели смысловое оценивание возвращает 503.
 
-Адрес фронтенда на Vercel пока неизвестен. После публикации добавьте точный origin
-`https://<project>.vercel.app` в `CORS_ORIGINS` и примените `.env`:
+Фронтенд размещён на `https://dataitshechka.vercel.app`; этот точный origin
+добавлен в `CORS_ORIGINS`. При изменении списка примените `.env`:
 
 ```bash
 cd /root/BimBomBam/backend

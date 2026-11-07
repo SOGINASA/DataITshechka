@@ -1,8 +1,11 @@
-import type { Appeal, Criterion, Evaluation } from "./types.js";
+import type { Appeal, Criterion, Evaluation, CriterionResult } from "./types.js";
 export function normalized(value: number, criterion: Criterion) {
   return criterion.max > 0
     ? Math.max(0, Math.min(1, value / criterion.max))
     : 0;
+}
+export function isAssessed(evaluation: Evaluation | undefined) {
+  return !!evaluation && !evaluation.results.some(r => r.status === "needs_review");
 }
 export function finalValue(
   evaluation: Evaluation,
@@ -12,6 +15,7 @@ export function finalValue(
   const original =
     evaluation.results.find((r) => r.criterionId === criterionId)?.value ??
     null;
+  if (evaluation.revision !== undefined) return original;
   const decision = appeals.find(
     (a) =>
       a.evaluationId === evaluation.id &&
@@ -26,6 +30,8 @@ export function score(
   original = false,
 ): number | null {
   if (!evaluation) return null;
+  if (evaluation.revision !== undefined)
+    return original ? evaluation.serverOriginalScore ?? null : evaluation.serverScore ?? null;
   let weight = 0,
     total = 0;
   for (const criterion of evaluation.checklist.criteria) {
@@ -55,7 +61,8 @@ export const scoreTone = (value: number | null) =>
       : value >= 70
         ? "warning"
         : "danger";
-export function answerLabel(value: number | null, criterion: Criterion) {
+export function answerLabel(value: number | null, criterion: Criterion, status?: CriterionResult["status"]) {
+  if (status === "needs_review") return "Не оценено";
   return value === null
     ? "N/A"
     : criterion.type === "flag"

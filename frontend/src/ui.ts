@@ -1,6 +1,6 @@
 import type { Conversation, Criterion } from "./types.js";
 import { getState } from "./state.js";
-import { score, scoreTone, formatScore } from "./scoring.js";
+import { score, scoreTone, formatScore, isAssessed } from "./scoring.js";
 export const esc = (value: unknown) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -91,6 +91,8 @@ export function conversationStatus(c: Conversation) {
     return '<span class="badge warning"><i class="status-dot"></i>Апелляция</span>';
   if (!evaluation)
     return '<span class="badge neutral"><i class="status-dot"></i>Не оценён</span>';
+  if (!isAssessed(evaluation))
+    return '<span class="badge warning"><i class="status-dot"></i>Оценка не завершена</span>';
   const value = score(evaluation, appeals);
   return `<span class="badge ${scoreTone(value)}"><i class="status-dot"></i>${value !== null && value < 80 ? "Нужна проверка" : "Оценён"}</span>`;
 }

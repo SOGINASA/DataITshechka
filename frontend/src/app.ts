@@ -3,11 +3,13 @@ import {
   addConversations,
   evaluate,
   getState,
-  getPersistenceWarning,
+  loadWorkspace,
+  importDataset,
   resolveAppeal,
   saveChecklist,
   submitAppeal,
 } from "./state.js";
+import { ApiError } from "./api.js";
 import { answerLabel, validValue } from "./scoring.js";
 import { importExample, parseImport } from "./import.js";
 import { empty, esc, href, icon } from "./ui.js";
@@ -37,7 +39,10 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 const modal = document.querySelector<HTMLDialogElement>("#modal")!;
 const latestChecklist = () =>
   getState().checklists[getState().checklists.length - 1];
-let draft: Checklist = structuredClone(latestChecklist());
+let draft: Checklist = {id: "", name: "Новый чек-лист", version: 1, criteria: [], createdAt: ""};
+let loading = true;
+let loaded = false;
+let loadError = "";
 let draftDirty = false;
 let filters: Filters = {
   search: "",
@@ -108,7 +113,9 @@ function render() {
     }
   }
   let content = "";
-  if (r.section === "dialogues" && r.id) {
+  if (loading) content = empty("Загружаем данные", "Получаем диалоги, оценки и чек-листы с сервера.");
+  else if (!loaded) content = empty("Не удалось загрузить данные", loadError, '<button class="button primary" data-action="refresh">Повторить</button>');
+  else if (r.section === "dialogues" && r.id) {
     const c = conversations.find((c) => c.id === r.id);
     content = c
       ? detailView(c, selectedEvaluation, selectedCriterion)
@@ -127,10 +134,10 @@ function render() {
     );
   else if (r.section === "appeals") content = appealsView(appealStatus, r.id);
   else content = overviewView();
-  app.innerHTML = `<div class="app-shell"><aside class="sidebar">${nav(r.section)}</aside><div class="app-main"><header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><span class="demo-pill">Демо</span></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${getPersistenceWarning() ? `<div class="notice-box storage-warning" role="alert">${icon("alert", 18)}${esc(getPersistenceWarning())}</div>` : ""}${content}</main></div></div>`;
+  app.innerHTML = `<div class="app-shell"><aside class="sidebar">${nav(r.section)}</aside><div class="app-main"><header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><button class="text-button" data-action="refresh"${loading ? " disabled" : ""}>Обновить данные</button></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${loadError && loaded ? `<div class="notice-box" role="alert">${esc(loadError)}</div>` : ""}${content}</main></div></div>`;
   document.title = `${navItems.find((n) => n.id === r.section)?.label || "Обзор"} · Freedom CQA`;
   if (busy.has(r.id)) setEvaluationBusy(r.id);
-  lastRoute = r.raw;
+  if (loaded && !loading) lastRoute = r.raw;
   if (r.section === "dialogues" && r.id) {
     const c = conversations.find((c) => c.id === r.id);
     const e = c ? currentEvaluation(c, selectedEvaluation) : undefined;
@@ -247,13 +254,10 @@ function focusEvidence(index: number, activateTab = true, moveFocus = true) {
     selection.style.width = `${(m.duration / demoWaveform.duration) * 100}%`;
   }
 }
-function notify(message: string) {
-  if (getPersistenceWarning())
-    message =
-      "Изменения применены в этой вкладке, но сохранить их в браузере не удалось. Подробности — в предупреждении на странице.";
+function notify(message: string, kind: "success" | "error" = "success") {
   const toast = document.querySelector<HTMLDivElement>("#toast")!;
   clearTimeout(toastTimer);
-  toast.innerHTML = `${icon("check", 18)}<span>${esc(message)}</span><button data-action="close-toast" aria-label="Закрыть уведомление">${icon("close", 15)}</button>`;
+  toast.innerHTML = `${icon(kind === "error" ? "alert" : "check", 18)}<span>${esc(message)}</span><button data-action="close-toast" aria-label="Закрыть уведомление">${icon("close", 15)}</button>`;
   toast.classList.add("visible");
   toastTimer = setTimeout(() => toast.classList.remove("visible"), 5000);
 }
@@ -294,9 +298,10 @@ function uploadModal() {
   openModal(
     "Загрузить диалоги",
     "Добавьте транскрипты в рабочее пространство для оценки.",
-    `<form id="upload-form"><input type="file" id="json-file" accept=".json,application/json" hidden aria-label="JSON-файл с диалогами"><button class="upload-zone" type="button" data-action="choose-file"><span class="upload-icon">${icon("file", 26)}</span><strong id="upload-filename">Выберите JSON-файл</strong><span>Массив диалогов или ответ API · до 5 МБ</span><span class="button secondary small">${icon("upload", 15)}Выбрать файл</span></button><div class="field"><div class="field-heading"><label for="json-input">Или вставьте JSON</label><button type="button" class="text-button" data-action="import-example">Вставить пример</button></div><textarea id="json-input" class="code-input" rows="7" required placeholder='[ { "conversation_id": "…", "transcript": […] } ]'></textarea></div><p id="import-error" class="form-error" role="alert" hidden></p><div class="modal-footer"><span class="muted">Данные сохраняются в этом браузере.</span><button type="submit" class="button primary">Добавить диалоги${icon("arrow", 16)}</button></div></form>`,
+    `<form id="upload-form"><input type="file" id="json-file" accept=".json,application/json" hidden aria-label="JSON-файл с диалогами"><button class="upload-zone" type="button" data-action="choose-file"><span class="upload-icon">${icon("file", 26)}</span><strong id="upload-filename">Выберите JSON-файл</strong><span>Массив диалогов или ответ API · до 4 МиБ</span><span class="button secondary small">${icon("upload", 15)}Выбрать файл</span></button><div class="field"><div class="field-heading"><label for="json-input">Или вставьте JSON</label><button type="button" class="text-button" data-action="import-example">Вставить пример</button></div><textarea id="json-input" class="code-input" rows="7" required placeholder='[ { "conversation_id": "…", "transcript": […] } ]'></textarea></div><p id="import-error" class="form-error" role="alert" hidden></p><div class="modal-footer"><span class="muted">Данные сохраняются на сервере. До 100 диалогов за один импорт.</span><button type="submit" class="button primary">Добавить диалоги${icon("arrow", 16)}</button></div></form>`,
     true,
   );
+  modal.insertAdjacentHTML("beforeend", `<details><summary>Импорт набора организатора</summary><form id="dataset-form"><div class="field"><label for="dataset-group">ID набора</label><input id="dataset-group" name="group" value="DEV" required maxlength="80"></div><p id="dataset-error" class="form-error" role="alert" hidden></p><button class="button secondary" type="submit">Импортировать набор</button></form></details>`);
 }
 function showError(id: string, message: string) {
   const el = document.getElementById(id);
@@ -467,8 +472,8 @@ document.addEventListener("change", async (event) => {
   if (target.id === "json-file") {
     const file = target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showError("import-error", "Размер файла должен быть не больше 5 МБ.");
+    if (file.size > 4 * 1024 * 1024) {
+      showError("import-error", "Размер файла должен быть не больше 4 МиБ.");
       return;
     }
     try {
@@ -494,10 +499,15 @@ document.addEventListener("click", async (event) => {
     document.getElementById("main-content")?.focus();
     return;
   }
+  if (pendingForms.size && link) { event.preventDefault(); return; }
   if (link && modal.open && modal.classList.contains("navigation-modal"))
     closeModal();
   if (!control) return;
   const action = control.dataset.action;
+  if ((busy.size || pendingForms.size) && ["refresh", "evaluate", "upload", "confirm-switch", "checklist-version", "add-criterion", "delete-criterion"].includes(action || "")) {
+    notify("Дождитесь завершения текущей операции."); return;
+  }
+  if (action === "refresh") { await refreshWorkspace(); return; }
   if (action === "upload") uploadModal();
   if (action === "close-modal") closeModal();
   if (action === "close-toast")
@@ -523,7 +533,7 @@ document.addEventListener("click", async (event) => {
     openModal(
       "От диалога к решению",
       "Три шага для проверки качества обслуживания.",
-      `<ol class="help-steps"><li><span>01</span><div><h3>Выберите диалог</h3><p>Откройте разговор из списка или загрузите транскрипты в JSON.</p></div></li><li><span>02</span><div><h3>Проверьте оценку</h3><p>Выберите чек-лист. Откройте обоснование и перейдите к реплике-доказательству.</p></div></li><li><span>03</span><div><h3>Примите решение</h3><p>Оспорьте критерий, рассмотрите апелляцию и сохраните финальный результат.</p></div></li></ol><div class="notice-box">Сейчас это фронтенд с мок-данными. Оценки моделируются локально; AI-анализ не подключён. Начальные правила соответствуют чек-листу кейса. Изменения сохраняются в этом браузере.</div><div class="modal-footer"><button class="button primary" data-action="close-modal">Всё понятно</button></div>`,
+      `<ol class="help-steps"><li><span>01</span><div><h3>Выберите диалог</h3><p>Откройте разговор из списка или загрузите транскрипты в JSON.</p></div></li><li><span>02</span><div><h3>Проверьте оценку</h3><p>Выберите чек-лист. Откройте обоснование и перейдите к реплике-доказательству.</p></div></li><li><span>03</span><div><h3>Примите решение</h3><p>Оспорьте критерий, рассмотрите апелляцию и сохраните финальный результат.</p></div></li></ol><div class="notice-box">Диалоги, чек-листы, оценки и решения сохраняются на сервере. Для AI-оценки нужна настроенная модель. Ручная проверка создаёт оценку с неоценёнными смысловыми критериями.</div><div class="modal-footer"><button class="button primary" data-action="close-modal">Всё понятно</button></div>`,
     );
   }
   if (action === "chart") {
@@ -622,12 +632,13 @@ document.addEventListener("click", async (event) => {
     ).value;
     busy.add(id);
     setEvaluationBusy(id);
-    await new Promise((resolve) => setTimeout(resolve, 850));
-    const evaluation = evaluate(id, checklistId);
-    busy.delete(id);
-    selectedEvaluation = evaluation?.id || "";
-    render();
-    notify("Демонстрационная оценка готова");
+    const engine = (document.getElementById("evaluation-engine") as HTMLSelectElement).value;
+    try {
+      const evaluation = await evaluate(id, checklistId, engine);
+      selectedEvaluation = evaluation.id;
+      notify(evaluation.needsReview ? "Оценка сохранена. Есть критерии для ручной проверки." : "Оценка сохранена");
+    } catch (error) { notify(errorMessage(error), "error"); }
+    finally { busy.delete(id); render(); }
   }
   if (action === "appeal") {
     const c = getState().conversations.find((c) => c.id === route().id);
@@ -645,7 +656,7 @@ document.addEventListener("click", async (event) => {
     openModal(
       "Оспорить оценку",
       "Объясните, почему критерий требует пересмотра.",
-      `<form id="appeal-form"><div class="appeal-criterion"><span class="eyebrow">СПОРНЫЙ КРИТЕРИЙ</span><h3>${esc(criterion.name)}</h3><span class="badge warning">${esc(answerLabel(value, criterion))}</span></div><div class="field"><label for="appeal-comment">Комментарий к апелляции</label><textarea id="appeal-comment" name="comment" rows="5" required maxlength="2000" placeholder="Что нужно учесть проверяющему? Укажите фрагмент или контекст разговора."></textarea></div><p id="appeal-error" class="form-error" role="alert" hidden></p><div class="modal-footer"><button type="button" class="button secondary" data-action="close-modal">Отмена</button><button type="submit" class="button primary">Отправить апелляцию${icon("external", 15)}</button></div></form>`,
+      `<form id="appeal-form"><div class="field"><label for="appeal-author">Ваше имя</label><input id="appeal-author" name="author" required maxlength="120" autocomplete="name"></div><div class="appeal-criterion"><span class="eyebrow">СПОРНЫЙ КРИТЕРИЙ</span><h3>${esc(criterion.name)}</h3><span class="badge warning">${esc(answerLabel(value, criterion, evaluation.results.find(r => r.criterionId === criterion.id)?.status))}</span></div><div class="field"><label for="appeal-comment">Комментарий к апелляции</label><textarea id="appeal-comment" name="comment" rows="5" required maxlength="2000" placeholder="Что нужно учесть проверяющему? Укажите фрагмент или контекст разговора."></textarea></div><p id="appeal-error" class="form-error" role="alert" hidden></p><button type="button" class="text-button" data-action="refresh">Обновить данные</button><div class="modal-footer"><button type="button" class="button secondary" data-action="close-modal">Отмена</button><button type="submit" class="button primary">Отправить апелляцию${icon("external", 15)}</button></div></form>`,
     );
   }
   if (action === "appeal-filter") {
@@ -699,94 +710,100 @@ document.addEventListener("click", async (event) => {
     render();
   }
 });
-document.addEventListener("submit", (event) => {
+const pendingForms = new Set<string>();
+document.addEventListener("submit", async (event) => {
   const form = event.target as HTMLFormElement;
-  if (
-    !["upload-form", "appeal-form", "resolve-form", "checklist-form"].includes(
-      form.id,
-    )
-  )
-    return;
+  const errors: Record<string, string> = {"upload-form": "import-error", "appeal-form": "appeal-error", "resolve-form": "review-error", "checklist-form": "checklist-error", "dataset-form": "dataset-error"};
+  if (!errors[form.id]) return;
   event.preventDefault();
-  if (form.id === "upload-form") {
-    try {
-      const records = parseImport(
-        (document.getElementById("json-input") as HTMLTextAreaElement).value,
-      );
-      const count = addConversations(records);
-      if (!count) {
-        showError(
-          "import-error",
-          "Диалоги с этими ID уже есть в рабочем пространстве.",
-        );
-        return;
-      }
-      closeModal();
-      location.hash = "/dialogues";
-      render();
-      notify(
-        `Добавлено диалогов: ${count}${count < records.length ? `. Дубликаты пропущены: ${records.length - count}` : ""}`,
-      );
-    } catch (e) {
-      showError("import-error", (e as Error).message);
+  if (loading || pendingForms.size || busy.size) { notify("Дождитесь завершения текущей операции."); return; }
+  const data = new FormData(form);
+  const controls = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>("input, select, textarea, button"));
+  const previouslyDisabled = controls.map(c => c.disabled);
+  pendingForms.add(form.id);
+  controls.forEach(c => c.disabled = true);
+  // The checklist submit button is outside the form.
+  const externalSubmit = document.getElementById("save-checklist") as HTMLButtonElement | null;
+  if (form.id === "checklist-form" && externalSubmit) externalSubmit.disabled = true;
+  try {
+    if (form.id === "upload-form") {
+      const records = parseImport((document.getElementById("json-input") as HTMLTextAreaElement).value);
+      const count = await addConversations(records);
+      closeModal(); location.hash = "/dialogues"; render();
+      notify(`Добавлено диалогов: ${count}`);
+    } else if (form.id === "dataset-form") {
+      const result = await importDataset(String(data.get("group") || "").trim());
+      closeModal(); location.hash = "/dialogues"; render();
+      notify(`Импортировано: ${result.imported}. Пропущено: ${result.skipped}.`);
+    } else if (form.id === "appeal-form" && appealTarget) {
+      await submitAppeal({ conversationId: appealTarget.conversationId, evaluationId: appealTarget.evaluation.id,
+        criterionId: appealTarget.criterion.id, originalValue: appealTarget.evaluation.results.find(r => r.criterionId === appealTarget!.criterion.id)?.value ?? null,
+        author: String(data.get("author") || "").trim(), comment: String(data.get("comment") || "").trim() });
+      closeModal(); render(); notify("Апелляция отправлена на рассмотрение");
+    } else if (form.id === "resolve-form") {
+      await resolveAppeal(form.dataset.id!, data.get("decision") === "change" ? "change" : "confirm",
+        data.get("value") === "na" ? null : Number(data.get("value")),
+        String(data.get("reason") || "").trim(), String(data.get("reviewer") || "").trim(),
+        String(data.get("evidence") || ""), String(data.get("range-start") || ""), String(data.get("range-end") || ""));
+      appealStatus = "resolved"; render(); notify("Решение сохранено. Итоговая оценка пересчитана.");
+    } else if (form.id === "checklist-form") {
+      const problem = validateChecklist(draft);
+      if (problem) throw new Error(problem);
+      draft = structuredClone(await saveChecklist(draft));
+      draftDirty = false; render(); notify(`Чек-лист сохранён · версия ${draft.version}`);
     }
-  }
-  if (form.id === "appeal-form" && appealTarget) {
-    const comment = (new FormData(form).get("comment") as string).trim();
-    if (!comment) {
-      showError("appeal-error", "Добавьте комментарий к апелляции.");
-      return;
-    }
-    const a = submitAppeal({
-      conversationId: appealTarget.conversationId,
-      evaluationId: appealTarget.evaluation.id,
-      criterionId: appealTarget.criterion.id,
-      originalValue:
-        appealTarget.evaluation.results.find(
-          (r) => r.criterionId === appealTarget!.criterion.id,
-        )?.value ?? null,
-      comment,
-    });
-    closeModal();
-    render();
-    notify(
-      a
-        ? "Апелляция отправлена на рассмотрение"
-        : "Апелляция по этому критерию уже существует",
-    );
-  }
-  if (form.id === "resolve-form") {
-    const data = new FormData(form);
-    const decision = data.get("decision") === "change" ? "change" : "confirm";
-    const value = data.get("value") === "na" ? null : Number(data.get("value"));
-    const reason = String(data.get("reason") || "").trim();
-    if (!reason) {
-      showError("review-error", "Обоснуйте решение.");
-      return;
-    }
-    if (!resolveAppeal(form.dataset.id!, decision, value, reason)) {
-      showError(
-        "review-error",
-        "Выберите допустимую ступень шкалы и добавьте обоснование.",
-      );
-      return;
-    }
-    appealStatus = "resolved";
-    render();
-    notify("Решение сохранено. Итоговая оценка пересчитана.");
-  }
-  if (form.id === "checklist-form") {
-    const problem = validateChecklist(draft);
-    if (problem) {
-      showError("checklist-error", problem);
-      return;
-    }
-    draft = structuredClone(saveChecklist(draft));
-    draftDirty = false;
-    render();
-    notify(`Чек-лист сохранён · версия ${draft.version}`);
+  } catch (error) { showError(errors[form.id], errorMessage(error)); }
+  finally {
+    pendingForms.delete(form.id);
+    controls.forEach((c, i) => c.disabled = previouslyDisabled[i]);
+    if (form.id === "checklist-form" && externalSubmit?.isConnected) externalSubmit.disabled = !draftDirty;
   }
 });
+function errorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Не удалось выполнить операцию.";
+  return error instanceof ApiError && error.status === 409
+    ? `${message} Нажмите «Обновить данные», проверьте введённые значения и повторите действие.` : message;
+}
+async function refreshWorkspace() {
+  if (loaded && (busy.size || pendingForms.size)) { notify("Дождитесь завершения текущей операции."); return; }
+  if (loaded && loading) return;
+  const resolveForm = document.getElementById("resolve-form") as HTMLFormElement | null;
+  const savedForm = resolveForm ? {id: resolveForm.dataset.id, entries: Array.from(new FormData(resolveForm).entries())} : null;
+  loading = true; loadError = ""; render();
+  try {
+    await loadWorkspace(); loaded = true;
+    if (appealTarget && modal.open && document.getElementById("appeal-form")) {
+      const target = appealTarget;
+      const evaluation = getState().conversations.find(c => c.id === target.conversationId)?.evaluations.find(e => e.id === target.evaluation.id);
+      const criterion = evaluation?.checklist.criteria.find(c => c.id === target.criterion.id);
+      if (evaluation && criterion) {
+        const changed = evaluation.revision !== target.evaluation.revision;
+        appealTarget = {conversationId: target.conversationId, evaluation, criterion};
+        const result = evaluation.results.find(r => r.criterionId === criterion.id);
+        const panel = modal.querySelector(".appeal-criterion");
+        if (panel) panel.innerHTML = `<span class="eyebrow">СПОРНЫЙ КРИТЕРИЙ</span><h3>${esc(criterion.name)}</h3><span class="badge warning">${esc(answerLabel(result?.value ?? null, criterion, result?.status))}</span>`;
+        if (changed) showError("appeal-error", "Оценка обновилась. Проверьте новое значение; ваш комментарий сохранён.");
+      }
+    }
+    if (!draftDirty && latestChecklist()) {
+      draft = structuredClone(latestChecklist());
+      editorSelection = draft.criteria[0]?.id || "";
+    }
+  } catch (error) { loadError = errorMessage(error); }
+  finally {
+    loading = false; render();
+    const form = document.getElementById("resolve-form") as HTMLFormElement | null;
+    if (savedForm && form && form.dataset.id === savedForm.id) {
+      for (const [name, value] of savedForm.entries) {
+        form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${name}"]`).forEach(input => {
+          if (input instanceof HTMLInputElement && input.type === "radio") input.checked = input.value === value;
+          else input.value = String(value);
+        });
+      }
+      form.querySelector<HTMLInputElement>('input[name="decision"]:checked')?.dispatchEvent(new Event("change", {bubbles: true}));
+    }
+  }
+}
 export function validateChecklist(c: Checklist): string | null {
   if (!c.name.trim()) return "Введите название чек-листа.";
   if (!c.criteria.length) return "Добавьте хотя бы один критерий.";
@@ -828,6 +845,7 @@ export function validateChecklist(c: Checklist): string | null {
   return null;
 }
 window.addEventListener("hashchange", () => {
+  if (pendingForms.size) return;
   if (location.hash === "#main-content") {
     document.getElementById("main-content")?.focus();
     return;
@@ -841,4 +859,4 @@ window.addEventListener("beforeunload", (event) => {
     event.returnValue = "";
   }
 });
-render();
+void refreshWorkspace();
