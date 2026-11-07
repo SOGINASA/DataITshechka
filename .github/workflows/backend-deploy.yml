@@ -1,0 +1,100 @@
+name: Backend CI and Deploy
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bimbombam-backend-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    name: Test, build and deploy backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      BACKEND_IMAGE: bimbombam-backend:${{ github.sha }}
+      POSTGRES_PASSWORD: ci-only-isolated-database
+      COMPOSE_PROJECT_NAME: bimbombam-ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Test backend and deployment safety
+        run: |
+          python -m pip install -r backend/requirements-dev.txt
+          python -m pytest backend/tests -q
+          bash backend/deploy/test-deploy.sh
+
+      - name: Build backend image on GitHub
+        run: |
+          docker build --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "$BACKEND_IMAGE" backend
+
+      - name: Verify image with PostgreSQL and migrations
+        run: |
+          docker compose -f backend/docker-compose.yml -f backend/compose.production.yml \
+            up -d --no-build --wait --wait-timeout 180
+          curl --fail --silent --show-error http://127.0.0.1:6767/api/ready
+          docker compose -f backend/docker-compose.yml -f backend/compose.production.yml \
+            exec -T backend flask --app app:create_app seed-checklist
+
+      - name: Show CI container logs on failure
+        if: failure()
+        run: docker compose -f backend/docker-compose.yml -f backend/compose.production.yml logs --tail 100
+
+      - name: Stop isolated CI containers
+        if: always()
+        run: docker compose -f backend/docker-compose.yml -f backend/compose.production.yml down --volumes
+
+      - name: Deploy tested image to VPS
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        env:
+          VPS_HOST: ${{ secrets.BIMBOMBAM_VPS_HOST }}
+          VPS_USER: ${{ secrets.BIMBOMBAM_VPS_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.BIMBOMBAM_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.BIMBOMBAM_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST" && test -n "$VPS_USER"
+          test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/bimbombam"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/bimbombam" "$HOME/.ssh/known_hosts"
+          ssh_options=(-i "$HOME/.ssh/bimbombam" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15)
+          destination="$VPS_USER@$VPS_HOST"
+          release="/root/BimBomBam/.deploy/incoming/$GITHUB_SHA"
+          docker save "$BACKEND_IMAGE" | gzip -1 > "$RUNNER_TEMP/backend-image.tar.gz"
+          ssh "${ssh_options[@]}" "$destination" "umask 077; mkdir -p '$release'"
+          scp "${ssh_options[@]}" "$RUNNER_TEMP/backend-image.tar.gz" backend/deploy/deploy.sh "$destination:$release/"
+          ssh "${ssh_options[@]}" "$destination" \
+            "bash '$release/deploy.sh' /root/BimBomBam '$GITHUB_SHA' '$release/backend-image.tar.gz'"
+          ssh "${ssh_options[@]}" "$destination" "rm -f '$release/backend-image.tar.gz' '$release/deploy.sh'; rmdir '$release'"
+          curl --fail --silent --show-error https://foodtrack.beast-inside.kz/fbroker/api/ready
+
+      - name: Remove runner SSH key
+        if: always()
+        run: rm -f "$HOME/.ssh/bimbombam"

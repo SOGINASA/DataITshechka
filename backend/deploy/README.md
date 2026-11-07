@@ -1,12 +1,51 @@
-# Бэкенд на VPS и автодеплой
+# GitHub Actions: деплой только бэкенда
 
-Сервер: `46.225.138.70`, checkout: `/root/BimBomBam`, ветка: `master`.
-Публикуются только Flask-бэкенд на `127.0.0.1:6767` и внутренняя PostgreSQL 16.
-Nginx уже направляет `/fbroker/` на этот порт. Фронтенд не собирается и не запускается.
+Workflow: [Backend CI and Deploy](https://github.com/SOGINASA/BimBomBam/actions/workflows/backend-deploy.yml).
+Файл: [backend-deploy.yml](../../.github/workflows/backend-deploy.yml).
 
-## Окружение и база
+Push в `master` с изменениями в `backend/` или workflow запускает:
 
-Настройки хранятся в `/root/BimBomBam/backend/.env` с правами `600`:
+1. Тесты Python и проверки скрипта деплоя на GitHub-hosted runner.
+2. Сборку Docker-образа с тегом и меткой точного SHA коммита.
+3. Запуск этого образа с отдельной PostgreSQL на runner: миграции, seed и `/api/ready`.
+4. Передачу готового образа и скрипта по SSH на VPS.
+5. Резервную копию БД, запуск образа и проверку готовности на VPS и через HTTPS.
+
+Pull request запускает проверки и сборку без доступа к SSH-секретам и без деплоя.
+Ручной запуск доступен через **Actions → Backend CI and Deploy → Run workflow** на ветке `master`.
+Изменения только фронтенда не запускают workflow. Сборка фронтенда отсутствует.
+
+VPS больше не опрашивает GitHub по таймеру и не собирает образ. Сервер выполняет
+загрузку образа, резервное копирование, миграции и запуск. Импорт образа и эти операции
+всё ещё требуют CPU/диска на VPS. Конкурентные деплои ограничены Actions и `flock`.
+Старая версия не может перезаписать более новый checkout.
+
+## Доступ и расположение
+
+- VPS: `46.225.138.70`, checkout: `/root/BimBomBam`, ветка: `master`.
+- Порт: `127.0.0.1:6767`, URL API: `https://foodtrack.beast-inside.kz/fbroker/api`.
+- Compose-проект: **bimbombam**, том PostgreSQL: **bimbombam_postgres_data**.
+- `.env`: `/root/BimBomBam/backend/.env`, права `600`; Actions его не заменяет.
+- Бэкапы и состояние: `/root/BimBomBam/.deploy/`, вне Git и Docker-образа.
+
+Проект `backend` и том `backend_postgres_data` принадлежат другому приложению.
+Не переименовывайте действующий проект и не выполняйте `down -v` на VPS.
+Удаление томов в workflow относится только к изолированной БД GitHub runner.
+
+В GitHub Repository Secrets используются:
+
+| Secret | Значение |
+|---|---|
+| `BIMBOMBAM_VPS_HOST` | Адрес VPS |
+| `BIMBOMBAM_VPS_USER` | SSH-пользователь |
+| `BIMBOMBAM_SSH_KEY` | Отдельный приватный ключ только для Actions |
+| `BIMBOMBAM_KNOWN_HOSTS` | Проверенный публичный SSH host key VPS |
+
+Приватный ключ FoodTrack не используется в Actions. SSH проверяет host key;
+при смене сервера обновите `KNOWN_HOSTS` после проверки нового ключа.
+Существующие GitHub-credentials на VPS нужны только для fetch точной версии при деплое.
+
+## Окружение
 
 ```dotenv
 COMPOSE_PROJECT_NAME=bimbombam
@@ -15,9 +54,9 @@ DATABASE_ENGINE=postgresql
 PORT=6767
 POSTGRES_DB=cqa
 POSTGRES_USER=cqa
-POSTGRES_PASSWORD=<случайный пароль, например openssl rand -hex 32>
+POSTGRES_PASSWORD=<случайный пароль>
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
-FREEDOM_API_URL=<подписанный URL из локального .env>
+FREEDOM_API_URL=<подписанный URL>
 OLLAMA_BASE_URL=http://host.docker.internal:11434
 OLLAMA_MODEL=
 OLLAMA_TIMEOUT=120
@@ -25,90 +64,40 @@ OLLAMA_NUM_CTX=32768
 OLLAMA_NUM_PREDICT=4096
 ```
 
-В CORS указывается origin фронтенда: схема, домен и порт, без пути `/fbroker/`.
-Адрес фронтенда на Vercel пока не определён. После публикации добавьте точный
-`https://<project>.vercel.app` в этот список и выполните `deploy.sh --force`.
-В Compose выбор PostgreSQL задан явно; `DATABASE_URL` для этого запуска не нужен.
-PostgreSQL создаёт пользователя и базу из `POSTGRES_*` при первом запуске пустого тома.
-Изменение пароля в `.env` не меняет пароль уже созданного пользователя БД.
-Миграции и начальный официальный чек-лист применяются entrypoint при запуске бэкенда.
-Локальная SQLite и её диалоги автоматически не переносятся.
+PostgreSQL создаёт базу и пользователя при первом запуске пустого тома. Изменение
+`POSTGRES_PASSWORD` в `.env` не меняет пароль уже существующего пользователя БД.
+Миграции и официальный чек-лист применяются entrypoint. SQLite автоматически не переносится.
+Ollama в этот деплой не входит; без модели смысловое оценивание возвращает 503.
 
-Имя проекта **bimbombam** и том **bimbombam_postgres_data** закреплены для этого нового развёртывания.
-Проект `backend` и `backend_postgres_data` на этом VPS принадлежат другому приложению.
-Не используйте их и не меняйте имя действующего проекта.
-Не выполняйте `docker compose down -v`: это удаляет базу.
-
-Ollama не входит в этот деплой. Пока модель не настроена, смысловое оценивание вернёт 503;
-CRUD, чек-листы, импорт и ручная работа доступны. Порт 11434 не требуется открывать в интернет.
-
-## Автодеплой
-
-`bimbombam-deploy.timer` раз в минуту запускает `bimbombam-deploy.service`.
-Скрипт делает fetch и fast-forward `origin/master`. Доступ к GitHub использует существующие
-credentials VPS; приватный SSH-ключ с компьютера на сервер или в GitHub не копируется.
-
-Если с последнего успешного запуска в `backend/` нет изменений, контейнеры не пересоздаются.
-Обновление checkout включает весь репозиторий, но сборка и запуск ограничены бэкендом.
-Локальные изменения или разошедшаяся история останавливают деплой без reset/stash.
-`flock` исключает одновременные ручные и автоматические запуски.
-
-При обновлении скрипт сначала собирает образ, затем останавливает бэкенд, делает
-`pg_dump -Fc` и проверяет чтение архива через `pg_restore --list`. После этого запускает
-бэкенд с миграциями и ожидает успешного `/api/ready`. На время дампа и запуска будет
-короткий перерыв в обслуживании. PostgreSQL не пересоздаётся и не обновляется автоматически.
-
-Состояние и резервные копии находятся в `/root/BimBomBam/.deploy/` (вне Git и Docker-образа).
-Успешная ревизия записана в `deployed-revision`. После ошибки тот же коммит автоматически
-не повторяется: исправьте причину и запустите `--force`. Новый коммит допускает новую попытку.
-Бэкапы не удаляются автоматически; контролируйте место и храните отдельную копию вне VPS.
-Проверка структуры дампа не заменяет проверку восстановления.
-
-Установка после настройки `.env` и проверки первого запуска:
+Адрес фронтенда на Vercel пока неизвестен. После публикации добавьте точный origin
+`https://<project>.vercel.app` в `CORS_ORIGINS` и примените `.env`:
 
 ```bash
-cd /root/BimBomBam
-bash backend/deploy/deploy.sh
-install -m 644 backend/deploy/bimbombam-deploy.service /etc/systemd/system/
-install -m 644 backend/deploy/bimbombam-deploy.timer /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable --now bimbombam-deploy.timer
-```
-
-После изменения файлов `.service`/`.timer` повторите их установку и `daemon-reload`.
-Скрипт деплоя обновляется с репозиторием; новая логика используется со следующего запуска.
-
-## Проверка и управление
-
-```bash
-systemctl list-timers bimbombam-deploy.timer
-journalctl -u bimbombam-deploy.service -n 80 --no-pager
 cd /root/BimBomBam/backend
-docker compose -p bimbombam ps
-curl -fsS http://127.0.0.1:6767/api/ready
-docker compose -p bimbombam exec backend flask --app app:create_app db current
+docker compose -p bimbombam -f docker-compose.yml -f compose.production.yml \
+  up -d --no-deps --no-build --force-recreate --wait backend
 ```
 
-Изменения `.env` не отслеживаются Git. Применить их или повторить неуспешный деплой:
+## Проверка и восстановление
 
 ```bash
-cd /root/BimBomBam
-bash backend/deploy/deploy.sh --force
+cd /root/BimBomBam/backend
+docker compose -p bimbombam -f docker-compose.yml -f compose.production.yml ps
+curl -fsS http://127.0.0.1:6767/api/ready
+docker compose -p bimbombam -f docker-compose.yml -f compose.production.yml logs --tail 100 backend
+cat /root/BimBomBam/.deploy/deployed-revision
 ```
 
-Остановить автоматические проверки: `systemctl disable --now bimbombam-deploy.timer`.
-Это не останавливает уже работающие контейнеры или уже начавшийся деплой.
+Логи деплоя находятся во вкладке Actions. После ошибки исправьте причину и используйте
+**Re-run failed jobs** либо отправьте исправленный коммит. Локальные изменения на VPS
+останавливают деплой без reset/stash. Никакого фонового повторения не происходит.
 
-При сбое сначала проверьте журнал и `docker compose -p bimbombam logs --tail 100 backend`.
-Предыдущий образ сохранён под тегом `bimbombam-backend:previous`; откат кода и восстановление
-БД — отдельные операции. Не запускайте старый образ поверх несовместимой схемы.
-Для обычного исправления отправьте исправленный коммит. При повреждении данных остановите
-таймер и бэкенд, выберите проверенный дамп и подготовьте отдельное восстановление БД.
+Перед миграциями бэкенд останавливается, выполняются `pg_dump -Fc` и `pg_restore --list`;
+на время этих операций есть короткий перерыв в обслуживании. После успешного запуска
+образ получает тег `bimbombam-backend:current`, предыдущий — `bimbombam-backend:previous`.
+Бэкапы не удаляются автоматически. Не откатывайте код поверх несовместимой схемы;
+восстановление БД выполняется отдельно. Историческая проверка восстановления — [VERIFICATION.md](VERIFICATION.md).
 
-## Проверки скрипта
-
-`bash backend/deploy/test-deploy.sh` выполняет изолированные проверки Git и порядка операций
-с подставным Docker. Это не замена проверке контейнеров и PostgreSQL на VPS.
-
-Механика: [Compose project name](https://docs.docker.com/compose/how-tos/project-name/),
-[Compose up и ожидание healthcheck](https://docs.docker.com/reference/cli/docker/compose/up/).
+При переходе на Actions прежний `bimbombam-deploy.timer` отключается. Его файлы
+удалены из репозитория. Проверка: `systemctl is-enabled bimbombam-deploy.timer` должна
+возвращать `disabled` или `not-found`.

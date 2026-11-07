@@ -1,93 +1,80 @@
 #!/usr/bin/env bash
+# Invoked by GitHub Actions with an image built and tested on its runner.
 set -Eeuo pipefail
 umask 077
 
 main() {
-# This checkout is dedicated to deployment; local changes are never discarded.
-repo=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
-cd "$repo"
-state="$repo/.deploy"
-mkdir -p "$state/backups"
-exec 9>"$state/deploy.lock"
-flock -n 9 || exit 0
+  repo=${1:?Usage: deploy.sh REPOSITORY COMMIT_SHA IMAGE_ARCHIVE}
+  target=${2:?Missing commit SHA}
+  archive=${3:?Missing image archive}
+  [[ "$target" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid commit SHA' >&2; exit 2; }
+  repo=$(cd "$repo" && pwd)
+  [[ -f "$archive" ]] || { echo 'Image archive is missing' >&2; exit 1; }
+  cd "$repo"
+  state="$repo/.deploy"
+  mkdir -p "$state/backups"
+  exec 9>"$state/deploy.lock"
+  flock -w 300 9
 
-force=false
-case "${1:-}" in
-  '') ;;
-  --force) force=true ;;
-  *) echo 'Usage: deploy.sh [--force]' >&2; exit 2 ;;
-esac
+  export GIT_TERMINAL_PROMPT=0
+  [[ $(git branch --show-current) == master ]] || { echo 'Expected master branch' >&2; exit 1; }
+  [[ -z $(git status --porcelain --untracked-files=normal) ]] || {
+    echo 'Checkout has local changes; deployment stopped without overwriting them.' >&2
+    exit 1
+  }
+  git fetch --quiet origin master
+  git merge-base --is-ancestor "$target" origin/master || {
+    echo 'Requested revision is not on origin/master.' >&2; exit 1;
+  }
+  git merge-base --is-ancestor HEAD "$target" || {
+    echo 'Refusing an outdated release or divergent checkout.' >&2; exit 1;
+  }
+  git merge --ff-only --quiet "$target"
+  [[ -f backend/.env ]] || { echo 'backend/.env is missing' >&2; exit 1; }
 
-export GIT_TERMINAL_PROMPT=0
-[[ $(git branch --show-current) == master ]] || { echo 'Expected master branch' >&2; exit 1; }
-[[ -z $(git status --porcelain --untracked-files=normal) ]] || {
-  echo 'Checkout has local changes; deployment stopped without overwriting them.' >&2
-  exit 1
-}
-git fetch --quiet origin master
-target=$(git rev-parse origin/master)
-git merge-base --is-ancestor HEAD "$target" || {
-  echo 'Checkout diverged from origin/master; fast-forward required.' >&2
-  exit 1
-}
-git merge --ff-only --quiet "$target"
+  export BACKEND_IMAGE="bimbombam-backend:$target"
+  compose=(docker compose --project-name bimbombam --env-file "$repo/backend/.env"
+    -f "$repo/backend/docker-compose.yml" -f "$repo/backend/compose.production.yml")
+  "${compose[@]}" config --quiet
 
-previous=$(cat "$state/deployed-revision" 2>/dev/null || true)
-failed=$(cat "$state/failed-revision" 2>/dev/null || true)
-if ! "$force"; then
-  if [[ "$failed" == "$target" ]]; then
-    echo "Revision $target previously failed; fix the cause and run with --force."
-    exit 0
+  on_error() {
+    result=$?
+    printf '%s\n' "$target" > "$state/failed-revision"
+    echo "Deployment failed ($result) at $target; inspect the GitHub Actions log." >&2
+    echo 'Database recovery is manual; no automatic destructive rollback is performed.' >&2
+    exit "$result"
+  }
+  trap on_error ERR
+
+  echo "Deploying tested image for revision $target"
+  container=$("${compose[@]}" ps -aq backend)
+  if [[ -n "$container" ]]; then
+    old_image=$(docker inspect --format '{{.Image}}' "$container")
+    docker tag "$old_image" bimbombam-backend:previous
   fi
-  if [[ -n "$previous" ]] && git diff --quiet "$previous" "$target" -- backend/; then
-    exit 0
-  fi
-fi
 
-[[ -f backend/.env ]] || { echo 'Create backend/.env first; see backend/deploy/README.md' >&2; exit 1; }
-cd "$repo/backend"
-compose=(docker compose --project-name bimbombam --env-file "$repo/backend/.env" -f "$repo/backend/docker-compose.yml")
-"${compose[@]}" config --quiet
+  # No builds or dependency installation run on the VPS.
+  docker load --input "$archive"
+  image_revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$BACKEND_IMAGE")
+  [[ "$image_revision" == "$target" ]]
+  "${compose[@]}" up -d --no-recreate --wait --wait-timeout 120 postgres
 
-on_error() {
-  result=$?
-  printf '%s\n' "$target" > "$state/failed-revision"
-  echo "Deployment failed ($result) at $target. Inspect journalctl -u bimbombam-deploy.service." >&2
-  echo 'Database recovery is manual; no automatic destructive rollback is performed.' >&2
-  exit "$result"
-}
-trap on_error ERR
+  "${compose[@]}" stop -t 60 backend
+  backup="$state/backups/$(date -u +%Y%m%dT%H%M%SZ)-${target:0:12}.dump"
+  "${compose[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$backup.partial"
+  test -s "$backup.partial"
+  "${compose[@]}" exec -T postgres pg_restore --list < "$backup.partial" > /dev/null
+  mv "$backup.partial" "$backup"
+  echo "Database snapshot: $backup"
 
-echo "Deploying backend revision $target"
-# Keep the running image reachable before BuildKit replaces its latest tag.
-# With the containerd image store, its untagged index can otherwise disappear.
-container=$("${compose[@]}" ps -aq backend)
-if [[ -n "$container" ]]; then
-  old_image=$(docker inspect --format '{{.Image}}' "$container")
-  docker tag "$old_image" bimbombam-backend:previous
-fi
-
-# Build before interrupting traffic. PostgreSQL is never recreated by this script.
-"${compose[@]}" build backend
-"${compose[@]}" up -d --no-recreate --wait --wait-timeout 120 postgres
-
-# Stop writes before the snapshot so the backup represents pre-migration state.
-"${compose[@]}" stop -t 60 backend
-backup="$state/backups/$(date -u +%Y%m%dT%H%M%SZ)-${target:0:12}.dump"
-"${compose[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$backup.partial"
-test -s "$backup.partial"
-"${compose[@]}" exec -T postgres pg_restore --list < "$backup.partial" > /dev/null
-mv "$backup.partial" "$backup"
-echo "Database snapshot: $backup"
-
-# entrypoint.sh applies migrations and the idempotent initial checklist.
-"${compose[@]}" up -d --no-deps --no-build --force-recreate --wait --wait-timeout 180 backend
-"${compose[@]}" exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6767/api/ready', timeout=5)"
-printf '%s\n' "$target" > "$state/deployed-revision.tmp"
-mv "$state/deployed-revision.tmp" "$state/deployed-revision"
-rm -f "$state/failed-revision"
-echo "Backend ready on 127.0.0.1:6767, revision $target"
+  # entrypoint applies migrations and the idempotent initial checklist.
+  "${compose[@]}" up -d --no-deps --no-build --force-recreate --wait --wait-timeout 180 backend
+  "${compose[@]}" exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6767/api/ready', timeout=5)"
+  docker tag "$BACKEND_IMAGE" bimbombam-backend:current
+  printf '%s\n' "$target" > "$state/deployed-revision.tmp"
+  mv "$state/deployed-revision.tmp" "$state/deployed-revision"
+  rm -f "$state/failed-revision"
+  echo "Backend ready on 127.0.0.1:6767, revision $target"
 }
 
-# Parse the entire function before git updates this script on disk.
 main "$@"
