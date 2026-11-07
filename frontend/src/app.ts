@@ -11,6 +11,18 @@ import {
 import { answerLabel, validValue } from "./scoring.js";
 import { importExample, parseImport } from "./import.js";
 import { empty, esc, href, icon } from "./ui.js";
+import {
+  allCriteriaView,
+  currentEvaluation,
+  selectionFromQuery,
+  focusCriterion,
+  qualityView,
+  elapsed,
+  clock,
+  usesDemoAudio,
+} from "./review.js";
+import { criterionMaster } from "./editor.js";
+import { demoWaveform } from "./media.js";
 import { chartView, overviewView } from "./overview.js";
 import {
   appealsView,
@@ -35,6 +47,9 @@ let filters: Filters = {
 };
 let appealStatus = "open";
 let selectedEvaluation = "";
+let selectedCriterion = "";
+let editorSelection = draft.criteria[0]?.id || "";
+let editorMobileDetail = false;
 let lastRoute = "";
 let toastTimer: ReturnType<typeof setTimeout>;
 let modalTrigger: HTMLElement | null = null;
@@ -65,13 +80,22 @@ function route() {
 }
 function nav(section: string) {
   const pending = getState().appeals.filter((a) => a.status === "open").length;
-  return `<a href="#/overview" class="brand"><img src="./assets/brand/freedom-logo.svg" alt="Freedom"><span class="brand-subtitle">CONVERSATION QUALITY</span></a><div class="workspace-label"><span class="workspace-icon">${icon("book", 16)}</span><div><strong>Контроль качества</strong><span>Рабочее пространство</span></div></div><div class="nav-heading">РАБОЧАЯ ОБЛАСТЬ</div><nav aria-label="Основная навигация">${navItems.map((item) => `<a href="#/${item.id}" class="nav-item ${section === item.id ? "active" : ""}"${section === item.id ? ' aria-current="page"' : ""}>${icon(item.icon, 19)}<span>${item.label}</span>${item.id === "appeals" && pending ? `<span class="nav-badge">${pending}</span>` : ""}${section === item.id ? '<span class="nav-indicator"></span>' : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><button class="help-link" data-action="help">${icon("help")}Как это работает${icon("external", 15)}</button><div class="demo-workspace"><span class="demo-avatar">CQ</span><div><strong>Демо-пространство</strong><span><i class="tiny-dot"></i>Локальные данные</span></div></div></div>`;
+  return `<a href="#/overview" class="brand"><img src="./assets/brand/freedom-logo.svg" alt="Freedom"></a><nav aria-label="Основная навигация">${navItems.map((item) => `<a href="#/${item.id}" class="nav-item ${section === item.id ? "active" : ""}"${section === item.id ? ' aria-current="page"' : ""}>${icon(item.icon, 21)}<span>${item.label}</span>${item.id === "appeals" && pending ? `<span class="nav-badge">${pending}</span>` : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><button class="help-link" data-action="help">${icon("help", 20)}Помощь</button></div>`;
 }
 function render() {
   const r = route();
   const { conversations } = getState();
   if (r.raw !== lastRoute) {
     selectedEvaluation = "";
+    selectedCriterion = "";
+    if (r.section === "dialogues") {
+      const conversation = conversations.find((c) => c.id === r.id);
+      if (conversation) {
+        const selection = selectionFromQuery(conversation, r.query);
+        selectedEvaluation = selection.evaluationId;
+        selectedCriterion = selection.criterionId;
+      }
+    }
     filters = {
       search: "",
       language: "all",
@@ -87,7 +111,7 @@ function render() {
   if (r.section === "dialogues" && r.id) {
     const c = conversations.find((c) => c.id === r.id);
     content = c
-      ? detailView(c, selectedEvaluation)
+      ? detailView(c, selectedEvaluation, selectedCriterion)
       : empty(
           "Диалог не найден",
           "Откройте диалог из рабочего пространства.",
@@ -95,13 +119,133 @@ function render() {
         );
   } else if (r.section === "dialogues") content = dialoguesView(filters);
   else if (r.section === "checklists")
-    content = checklistView(draft, draftDirty);
+    content = checklistView(
+      draft,
+      draftDirty,
+      editorSelection,
+      editorMobileDetail,
+    );
   else if (r.section === "appeals") content = appealsView(appealStatus, r.id);
   else content = overviewView();
-  app.innerHTML = `<div class="app-shell"><aside class="sidebar">${nav(r.section)}</aside><div class="app-main"><header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 20)}</button><span class="desktop-only">${icon("sidebar", 17)}</span><span class="breadcrumb-divider desktop-only"></span><span>CQA</span>${icon("chevron", 13)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 13)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Карточка диалога"}</strong>` : ""}</div><div class="topbar-right"><span class="demo-pill"><i></i>Демо-данные</span><span class="topbar-date">7 ноября 2026</span></div></header><main id="main-content" class="main-content" tabindex="-1">${getPersistenceWarning() ? `<div class="notice-box storage-warning" role="alert">${icon("alert", 18)}${esc(getPersistenceWarning())}</div>` : ""}${content}</main><footer class="app-footer"><span>Freedom · Conversation Quality Analytics</span><span>С вниманием к каждому диалогу</span></footer></div></div>`;
+  app.innerHTML = `<div class="app-shell"><aside class="sidebar">${nav(r.section)}</aside><div class="app-main"><header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu-button" aria-label="Открыть навигацию" data-action="menu">${icon("menu", 22)}</button><a href="#/overview">CQA</a>${icon("chevron", 14)}<span>${navItems.find((n) => n.id === r.section)?.label || "Обзор"}</span>${r.id ? `${icon("chevron", 14)}<strong>${r.section === "appeals" ? "Рассмотрение" : "Анализ разговора"}</strong>` : ""}</div><span class="demo-pill">Демо</span></header><main id="main-content" class="main-content ${r.section === "dialogues" && r.id ? "conversation-main" : ""}" tabindex="-1">${getPersistenceWarning() ? `<div class="notice-box storage-warning" role="alert">${icon("alert", 18)}${esc(getPersistenceWarning())}</div>` : ""}${content}</main></div></div>`;
   document.title = `${navItems.find((n) => n.id === r.section)?.label || "Обзор"} · Freedom CQA`;
   if (busy.has(r.id)) setEvaluationBusy(r.id);
   lastRoute = r.raw;
+  if (r.section === "dialogues" && r.id) {
+    const c = conversations.find((c) => c.id === r.id);
+    const e = c ? currentEvaluation(c, selectedEvaluation) : undefined;
+    const cr = e ? focusCriterion(e, selectedCriterion) : undefined;
+    const fromQuery = new URLSearchParams(r.query).get("evidence");
+    const candidate = fromQuery === null ? undefined : Number(fromQuery);
+    const index =
+      candidate !== undefined &&
+      Number.isInteger(candidate) &&
+      c?.transcript[candidate]
+        ? candidate
+        : e?.results.find((result) => result.criterionId === cr?.id)
+            ?.evidence[0];
+    attachPlayer(index);
+    if (index !== undefined)
+      requestAnimationFrame(() => focusEvidence(index, false, false));
+  }
+}
+function attachPlayer(initialIndex?: number) {
+  const audio = document.getElementById(
+    "conversation-audio",
+  ) as HTMLAudioElement | null;
+  const c = getState().conversations.find((c) => c.id === route().id);
+  if (!audio || !c) return;
+  const sync = () => {
+    const duration = Number.isFinite(audio.duration)
+      ? audio.duration
+      : usesDemoAudio(c)
+        ? demoWaveform.duration
+        : 0;
+    const output = document.getElementById("player-time");
+    if (output)
+      output.textContent = `${clock(audio.currentTime)} / ${clock(duration)}`;
+    const range = document.getElementById(
+      "player-seek",
+    ) as HTMLInputElement | null;
+    if (range) {
+      range.max = String(duration);
+      range.value = String(audio.currentTime);
+    }
+    const cursor = document.getElementById("waveform-cursor");
+    if (cursor)
+      cursor.style.left = `${duration ? (audio.currentTime / duration) * 100 : 0}%`;
+    const button = document.querySelector<HTMLButtonElement>(
+      '[data-action="audio-play"]',
+    );
+    if (button) {
+      button.innerHTML = icon(audio.paused ? "play" : "pause", 22);
+      button.setAttribute(
+        "aria-label",
+        audio.paused ? "Воспроизвести запись" : "Приостановить запись",
+      );
+    }
+  };
+  audio.addEventListener("timeupdate", sync);
+  audio.addEventListener("play", sync);
+  audio.addEventListener("pause", sync);
+  audio.addEventListener("ended", sync);
+  audio.addEventListener("error", () => {
+    const error = document.getElementById("audio-error");
+    if (error) {
+      error.hidden = false;
+      error.textContent = "Не удалось загрузить запись";
+    }
+  });
+  audio.addEventListener(
+    "loadedmetadata",
+    () => {
+      if (initialIndex !== undefined)
+        audio.currentTime = Math.min(audio.duration, elapsed(c, initialIndex));
+      sync();
+    },
+    { once: true },
+  );
+}
+function focusEvidence(index: number, activateTab = true, moveFocus = true) {
+  if (activateTab) detailTab("transcript");
+  document
+    .querySelectorAll(".message.highlighted")
+    .forEach((el) => el.classList.remove("highlighted"));
+  const message = document.getElementById(`message-${index}`);
+  message?.classList.add("highlighted");
+  if (moveFocus) message?.focus({ preventScroll: true });
+  const container = document.querySelector<HTMLElement>(".transcript-messages");
+  if (message && container && container.clientHeight) {
+    const previous = document.getElementById(`message-${index - 1}`);
+    const context =
+      previous &&
+      previous.offsetHeight + message.offsetHeight <= container.clientHeight
+        ? previous
+        : message;
+    const top =
+      context.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop;
+    container.scrollTo({
+      top: Math.max(0, top),
+      behavior:
+        moveFocus && !matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "smooth"
+          : "auto",
+    });
+  }
+  const c = getState().conversations.find((c) => c.id === route().id);
+  const audio = document.getElementById(
+    "conversation-audio",
+  ) as HTMLAudioElement | null;
+  if (c && audio && Number.isFinite(audio.duration))
+    audio.currentTime = Math.min(audio.duration, elapsed(c, index));
+  const selection = document.getElementById("waveform-selection");
+  const m = demoWaveform.messages.find((m) => m.index === index);
+  if (selection && m) {
+    selection.style.left = `${(m.start / demoWaveform.duration) * 100}%`;
+    selection.style.width = `${(m.duration / demoWaveform.duration) * 100}%`;
+  }
 }
 function notify(message: string) {
   if (getPersistenceWarning())
@@ -205,6 +349,8 @@ function loadChecklist(id: string) {
   if (!c) return;
   draft = structuredClone(c);
   draftDirty = false;
+  editorSelection = draft.criteria[0]?.id || "";
+  editorMobileDetail = false;
   render();
 }
 function mutateCriterion(
@@ -245,11 +391,10 @@ function mutateCriterion(
       c.allowNA = false;
       c.naCondition = "";
     }
-    const details = target.closest("details")!;
     const index = draft.criteria.findIndex((x) => x.id === c.id);
-    details.outerHTML = editorCriterion(c, index).replace(
-      "<details ",
-      "<details open ",
+    document.getElementById("criterion-editor")!.innerHTML = editorCriterion(
+      c,
+      index,
     );
     document.getElementById(`type-${c.id}`)?.focus();
   } else if (
@@ -273,6 +418,12 @@ function mutateCriterion(
 }
 document.addEventListener("input", (event) => {
   const target = event.target as HTMLInputElement;
+  if (target.id === "player-seek") {
+    const audio = document.getElementById(
+      "conversation-audio",
+    ) as HTMLAudioElement | null;
+    if (audio) audio.currentTime = Number(target.value);
+  }
   if (target.id === "search") {
     filters.search = target.value;
     document.getElementById("dialogue-results")!.innerHTML =
@@ -292,8 +443,22 @@ document.addEventListener("change", async (event) => {
     document.getElementById("dialogue-results")!.innerHTML =
       dialogueResults(filters);
   }
+  if (target.id === "checklist-version") {
+    const id = target.value;
+    if (!draftDirty) loadChecklist(id);
+    else {
+      switchTarget = id;
+      target.value = draft.id;
+      openModal(
+        "Открыть другую версию?",
+        "Несохранённые изменения будут потеряны.",
+        `<div class="modal-footer"><button class="button secondary" data-action="close-modal">Остаться</button><button class="button primary" data-action="confirm-switch">Открыть</button></div>`,
+      );
+    }
+  }
   if (target.id === "evaluation-history") {
     selectedEvaluation = target.value;
+    selectedCriterion = "";
     render();
   }
   if (target.name === "decision")
@@ -380,36 +545,74 @@ document.addEventListener("click", async (event) => {
     render();
   }
   if (action === "detail-tab") detailTab(control.dataset.tab!);
-  if (action === "evidence") {
-    detailTab("transcript");
-    document
-      .querySelectorAll(".message.highlighted")
-      .forEach((el) => el.classList.remove("highlighted"));
-    const index = Number(control.dataset.index);
-    const message = document.getElementById(`message-${index}`);
-    message?.classList.add("highlighted");
-    message?.focus({ preventScroll: true });
-    requestAnimationFrame(() =>
-      message?.scrollIntoView({
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-        block: "center",
-      }),
-    );
-    const c = getState().conversations.find((c) => c.id === route().id);
+  if (action === "evidence") focusEvidence(Number(control.dataset.index));
+  if (action === "audio-play") {
     const audio = document.getElementById(
       "conversation-audio",
     ) as HTMLAudioElement | null;
-    if (audio && c && Number.isFinite(audio.duration)) {
-      const first = new Date(c.transcript[0].timestamp).valueOf();
-      const selected = new Date(c.transcript[index].timestamp).valueOf();
-      if (Number.isFinite(first) && Number.isFinite(selected))
-        audio.currentTime = Math.max(
-          0,
-          Math.min(audio.duration, (selected - first) / 1000),
-        );
+    if (audio) {
+      if (audio.paused) {
+        try {
+          await audio.play();
+        } catch {
+          notify("Не удалось воспроизвести запись. Попробуйте ещё раз.");
+        }
+      } else audio.pause();
     }
+  }
+  if (action === "all-criteria") {
+    const c = getState().conversations.find((c) => c.id === route().id);
+    const e = c ? currentEvaluation(c, selectedEvaluation) : undefined;
+    if (c && e) {
+      openModal(
+        `Все ${e.checklist.criteria.length} критериев`,
+        `${e.checklist.name} · версия ${e.checklist.version}`,
+        allCriteriaView(c, e),
+        true,
+      );
+      modal.classList.add("criteria-modal");
+    }
+  }
+  if (action === "focus-criterion") {
+    const c = getState().conversations.find((c) => c.id === route().id);
+    const e = c ? currentEvaluation(c, selectedEvaluation) : undefined;
+    if (c && e) {
+      selectedCriterion = control.dataset.id!;
+      closeModal();
+      document.querySelector(".quality-workbench")!.innerHTML = qualityView(
+        c,
+        e,
+        selectedCriterion,
+      );
+      const index = e.results.find((r) => r.criterionId === selectedCriterion)
+        ?.evidence[0];
+      if (index !== undefined) focusEvidence(index, false, false);
+      const focus = document.querySelector<HTMLElement>(".focused-criterion");
+      focus?.setAttribute("tabindex", "-1");
+      focus?.focus({ preventScroll: true });
+    }
+  }
+  if (action === "select-editor-criterion") {
+    editorSelection = control.dataset.id!;
+    editorMobileDetail = true;
+    const c = draft.criteria.find((c) => c.id === editorSelection);
+    if (c) {
+      document.getElementById("criterion-editor")!.innerHTML = editorCriterion(
+        c,
+        draft.criteria.indexOf(c),
+      );
+      document.getElementById("criteria-master-items")!.innerHTML =
+        criterionMaster(draft, editorSelection);
+      const workspace = document.querySelector(".checklist-workspace");
+      workspace?.classList.add("editor-show-detail");
+      workspace?.classList.remove("editor-show-list");
+    }
+  }
+  if (action === "editor-back") {
+    editorMobileDetail = false;
+    const workspace = document.querySelector(".checklist-workspace");
+    workspace?.classList.add("editor-show-list");
+    workspace?.classList.remove("editor-show-detail");
   }
   if (action === "evaluate") {
     const id = control.dataset.id!;
@@ -484,20 +687,16 @@ document.addEventListener("click", async (event) => {
     };
     draft.criteria.push(c);
     draftDirty = true;
-    document
-      .querySelector(".criteria-editor-list")!
-      .insertAdjacentHTML(
-        "beforeend",
-        editorCriterion(c, draft.criteria.length - 1),
-      );
-    updateDraftUI();
+    editorSelection = c.id;
+    editorMobileDetail = true;
+    render();
     document.getElementById(`name-${c.id}`)?.focus();
   }
   if (action === "delete-criterion") {
     draft.criteria = draft.criteria.filter((c) => c.id !== control.dataset.id);
-    control.closest("details")?.remove();
     draftDirty = true;
-    updateDraftUI();
+    editorSelection = draft.criteria[0]?.id || "";
+    render();
   }
 });
 document.addEventListener("submit", (event) => {

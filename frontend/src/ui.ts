@@ -1,4 +1,4 @@
-import type { Conversation } from "./types.js";
+import type { Conversation, Criterion } from "./types.js";
 import { getState } from "./state.js";
 import { score, scoreTone, formatScore } from "./scoring.js";
 export const esc = (value: unknown) =>
@@ -12,6 +12,8 @@ export const esc = (value: unknown) =>
 export const href = (kind: string, id = "") =>
   `#/${kind}${id ? "/" + encodeURIComponent(id) : ""}`;
 const paths: Record<string, string> = {
+  play: '<path d="m8 4 12 8-12 8V4Z"/>',
+  pause: '<path d="M8 4v16M16 4v16"/>',
   dashboard:
     '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/>',
@@ -110,15 +112,37 @@ export function empty(title: string, text: string, action = "") {
   return `<div class="empty-state">${icon("search", 32)}<h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;
 }
 export function heading(
-  eyebrow: string,
+  _eyebrow: string,
   title: string,
-  text: string,
+  _text: string,
   action = "",
 ) {
-  return `<div class="page-heading"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1><p>${esc(text)}</p></div>${action}</div>`;
+  return `<div class="page-heading"><h1>${esc(title)}</h1>${action}</div>`;
 }
 export const uploadButton = () =>
   `<button class="button primary" data-action="upload">${icon("plus")}Загрузить диалоги</button>`;
 export function field(label: string, id: string, control: string) {
   return `<div class="field"><label for="${esc(id)}">${esc(label)}</label>${control}</div>`;
+}
+
+export function options(values: [string, string][], value: string) {
+  return values
+    .map(
+      ([key, label]) =>
+        `<option value="${esc(key)}"${key === value ? " selected" : ""}>${esc(label)}</option>`,
+    )
+    .join("");
+}
+export function valueOptions(criterion: Criterion, value: number | null) {
+  return (
+    criterion.steps
+      .map(
+        (step) =>
+          `<option value="${step}"${value === step ? " selected" : ""}>${esc(criterion.type === "scale" ? String(step) + " / " + criterion.max : step === 1 ? "Да" : "Нет")}${criterion.stepDescriptions[step] ? " — " + esc(criterion.stepDescriptions[step]) : ""}</option>`,
+      )
+      .join("") +
+    (criterion.allowNA
+      ? `<option value="na"${value === null ? " selected" : ""}>N/A — не применяется</option>`
+      : "")
+  );
 }
