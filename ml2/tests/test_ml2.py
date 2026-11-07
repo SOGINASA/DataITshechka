@@ -34,7 +34,7 @@ def answers(c=None):
         value = max(s['value'] for s in criterion['scale']) if kind == 'scale' else kind != 'flag'
         rows.append({'criterion_id': criterion['id'], 'status': 'scored' if kind == 'scale' else 'pass',
                      'value': value, 'explanation': 'Синтетический ответ для теста контракта.',
-                     'evidence_message_ids': ['m2'],
+                     'evidence_message_ids': ['m3' if criterion.get('review_scope') == 'closing_exchange' else 'm2'],
                      'reviewed_range': {'start_message_id': 'm1', 'end_message_id': 'm3'},
                      'knowledge_status': 'not_needed', 'knowledge_refs': []})
     return {'results': rows}
@@ -43,7 +43,7 @@ def answers(c=None):
 def wire_answers(raw=None):
     raw = raw if raw is not None else answers()
     return {'results': {r['criterion_id']: {
-        **{k: v for k, v in r.items() if k not in ('criterion_id', 'status', 'value')},
+        **{k: v for k, v in r.items() if k not in ('criterion_id', 'status', 'value', 'reviewed_range')},
         'answer': 'N/A' if r['status'] == 'not_applicable' else
                   'needs_review' if r['status'] == 'needs_review' else r['value']}
         for r in raw['results']}}

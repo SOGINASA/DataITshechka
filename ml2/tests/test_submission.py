@@ -25,12 +25,16 @@ class SubmissionTests(unittest.TestCase):
         raw[-1].update(status='fail', value=True)
         d = dialog()
         d['messages'].insert(0, {'id': 'bot', 'speaker': 'bot', 'text': 'Служебный контекст'})
+        scopes = {c['id']: c['review_scope'] for c in checklist()['criteria']}
+        for row in raw:
+            row['reviewed_range'] = {'start_message_id': 'bot',
+                                     'end_message_id': 'm2' if scopes[row['criterion_id']] == 'through_first_operator' else 'm3'}
         p = convert({'status': 'ok', 'results': raw}, d, checklist(), [])
         self.assertEqual(p['score'], {'final_score': 85.38, 'critical_flag': True})
         criteria = {c['criterion_id']: c for c in p['criteria']}
         self.assertEqual(set(criteria), {'contact', 'discovery', 'identification', 'consultation', 'empathy', 'dialogue', 'closure', 'critical'})
         self.assertEqual(criteria['dialogue']['value'], 7)
-        self.assertEqual(criteria['contact']['evidence_turns'], [2, 3, 4])
+        self.assertEqual(criteria['contact']['evidence_turns'], [1, 2, 3])
 
     def test_unknown_and_contact_na_are_errors_never_false_or_na(self):
         raw = answers()['results']

@@ -9,13 +9,14 @@ from .scoring import summarize
 from .decoding import schema_for, decode
 
 SYSTEM = (Path(__file__).parent / 'prompts/system.txt').read_text()
-PROMPT_VERSION = 'ml2-cqa-5'
+PROMPT_VERSION = 'ml2-cqa-9'
 
 
 class EvaluationFailure(RuntimeError):
-    def __init__(self, message, attempts):
+    def __init__(self, message, attempts, code='evaluation_failed'):
         super().__init__(message)
         self.attempts = attempts
+        self.code = code
 
 
 class Evaluator:
@@ -30,8 +31,10 @@ class Evaluator:
         dialog = conversation(raw)
         excerpts = self.knowledge.retrieve(dialog, self.as_of)
         schema = schema_for(self.checklist, dialog, excerpts)
-        prompt_rubric = {**self.checklist, 'criteria': [
-            {k: v for k, v in c.items() if k not in ('section', 'title')}
+        prompt_fields = ('id', 'title', 'description', 'answer_type', 'allow_na',
+                         'na_condition', 'scale', 'review_guide')
+        prompt_rubric = {'criteria': [
+            {k: c[k] for k in prompt_fields if k in c}
             for c in self.checklist['criteria']]}
         task = {'rubric': prompt_rubric, 'conversation': dialog,
                 'knowledge_excerpts': excerpts, 'knowledge_as_of': self.as_of}
@@ -41,10 +44,11 @@ class Evaluator:
             try:
                 response, usage = self.provider.complete(messages, schema)
             except ModelError as exc:
-                attempts.append({'attempt': index + 1, 'error': str(exc)})
-                raise EvaluationFailure(str(exc), attempts) from exc
+                attempts.append({'attempt': index + 1, 'error': str(exc), 'error_code': exc.code,
+                                 'diagnostics': exc.details})
+                raise EvaluationFailure(str(exc), attempts, exc.code) from exc
             try:
-                results = validate_results(decode(loads(response), self.checklist), self.checklist, dialog, excerpts)
+                results = validate_results(decode(loads(response), self.checklist, dialog), self.checklist, dialog, excerpts)
             except (ContractError, TypeError) as exc:
                 reason = str(exc) if isinstance(exc, ContractError) else 'Wrong field types'
                 attempts.append({'attempt': index + 1, 'usage': usage, 'validation_error': reason})

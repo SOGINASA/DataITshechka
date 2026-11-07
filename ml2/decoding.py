@@ -5,7 +5,7 @@ from .contracts import require, response_schema
 
 def schema_for(checklist, dialog, excerpts):
     properties = deepcopy(response_schema(checklist)['properties']['results']['items']['properties'])
-    for field in ('criterion_id', 'status', 'value'):
+    for field in ('criterion_id', 'status', 'value', 'reviewed_range'):
         properties.pop(field)
     allowed = [True, False, 'needs_review']
     if any(c['allow_na'] for c in checklist['criteria']):
@@ -13,10 +13,7 @@ def schema_for(checklist, dialog, excerpts):
     # bool and number must stay distinct, including false and zero.
     numbers = sorted({s['value'] for c in checklist['criteria'] for s in c['scale']})
     properties = {'answer': {'enum': allowed + numbers}, **properties}
-    properties['reviewed_range'] = properties['reviewed_range']['anyOf'][1]
     ids = [m['id'] for m in dialog['messages']]
-    for field in properties['reviewed_range']['properties'].values():
-        field['enum'] = ids
     properties['evidence_message_ids']['items']['enum'] = ids
     if not excerpts:
         properties['knowledge_status']['enum'] = ['not_needed', 'missing']
@@ -29,7 +26,26 @@ def schema_for(checklist, dialog, excerpts):
                 'properties': {k: {'$ref': '#/$defs/assessment'} for k in keys}}}}
 
 
-def decode(raw, checklist):
+def _reviewed_range(dialog, criterion):
+    messages = dialog['messages']
+    operators = [i for i, message in enumerate(messages) if message['speaker'] == 'operator']
+    scope = criterion['review_scope']
+    start, end = 0, len(messages) - 1
+    if scope == 'through_first_operator' and operators:
+        end = operators[0]
+    elif scope == 'closing_exchange' and operators:
+        last_operator = operators[-1]
+        last_client = next((i for i in range(last_operator - 1, -1, -1)
+                            if messages[i]['speaker'] == 'client'), None)
+        previous_operator = next((i for i in range((last_client if last_client is not None else last_operator) - 1,
+                                                   -1, -1)
+                                  if messages[i]['speaker'] == 'operator'), None)
+        start = previous_operator if previous_operator is not None else (
+            last_client if last_client is not None else last_operator)
+    return {'start_message_id': messages[start]['id'], 'end_message_id': messages[end]['id']}
+
+
+def decode(raw, checklist, dialog):
     require(isinstance(raw, dict) and set(raw) == {'results'}, 'Expected only results')
     rows = raw['results']
     require(isinstance(rows, dict), 'Model results must be keyed by criterion ID')
@@ -39,6 +55,7 @@ def decode(raw, checklist):
         row = rows[c['id']]
         require(isinstance(row, dict) and 'answer' in row, 'Missing model answer')
         row = deepcopy(row)
+        require('reviewed_range' not in row, 'reviewed_range is assigned by the server')
         value = row.pop('answer')
         if value == 'N/A':
             status, value = 'not_applicable', None
@@ -50,5 +67,6 @@ def decode(raw, checklist):
             status = ('fail' if value else 'pass') if c['answer_type'] == 'flag' else ('pass' if value else 'fail')
         # Types, steps, N/A eligibility, knowledge and proof still go through validate_results.
         require(not ({'criterion_id', 'status', 'value'} & set(row)), 'Redundant assessment fields')
-        results.append({**row, 'criterion_id': c['id'], 'status': status, 'value': value})
+        results.append({**row, 'criterion_id': c['id'], 'status': status, 'value': value,
+                        'reviewed_range': _reviewed_range(dialog, c)})
     return {'results': results}
