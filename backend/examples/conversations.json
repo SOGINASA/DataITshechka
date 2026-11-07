@@ -1,0 +1,37 @@
+{
+  "conversations": [
+    {
+      "external_id": "synthetic-ru-chat-1",
+      "title": "Синтетический пример: передача оператору",
+      "channel": "chat",
+      "language": "ru",
+      "operator_name": "Демо-оператор",
+      "messages": [
+        {"id": "m1", "speaker": "client", "text": "Не могу найти историю обращений.", "start_ms": 0},
+        {"id": "m2", "speaker": "bot", "text": "Передаю ваш вопрос оператору.", "start_ms": 1000},
+        {"id": "m3", "speaker": "operator", "text": "Здравствуйте! История обращений находится в разделе Поддержка.", "start_ms": 3000},
+        {"id": "m4", "speaker": "client", "text": "Нашёл, спасибо.", "start_ms": 7000}
+      ]
+    },
+    {
+      "external_id": "synthetic-kk-call-1",
+      "title": "Синтетический пример: казахская транскрипция звонка",
+      "channel": "call",
+      "language": "kk",
+      "messages": [
+        {"id": "m1", "speaker": "operator", "text": "Сәлеметсіз бе! Сізге қалай көмектесе аламын?", "start_ms": 0, "end_ms": 3000},
+        {"id": "m2", "speaker": "client", "text": "Қолдау қызметіне қалай хабарласамын?", "start_ms": 3200, "end_ms": 6000}
+      ]
+    },
+    {
+      "external_id": "synthetic-en-chat-1",
+      "title": "Synthetic example: English chat",
+      "channel": "chat",
+      "language": "en",
+      "messages": [
+        {"id": "m1", "speaker": "client", "text": "Where can I find support?"},
+        {"id": "m2", "speaker": "operator", "text": "Hello! Open the Support section in the app."}
+      ]
+    }
+  ]
+}

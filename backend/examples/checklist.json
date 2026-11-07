@@ -1,0 +1,37 @@
+{
+  "name": "Демонстрационный чек-лист CQA (не официальный)",
+  "version": "demo-1",
+  "description": "Только пример формата. Замените критериями Student Guide. Поиск фраз не понимает смысл диалога.",
+  "is_demo": true,
+  "criteria": [
+    {
+      "id": "greeting",
+      "title": "Приветствие оператора",
+      "weight": 1,
+      "rule": {
+        "type": "contains_any",
+        "speaker": "operator",
+        "terms": {
+          "ru": ["здравствуйте", "добрый день"],
+          "kk": ["сәлеметсіз бе", "қайырлы күн"],
+          "en": ["hello", "good morning", "good afternoon"]
+        }
+      }
+    },
+    {
+      "id": "resolution",
+      "title": "Решён ли вопрос клиента",
+      "description": "Проверьте запрос клиента, действия оператора и результат. Нужен контекст всего диалога.",
+      "weight": 3,
+      "critical": true,
+      "rule": {"type": "manual"}
+    },
+    {
+      "id": "handoff",
+      "title": "Корректность передачи от бота оператору",
+      "description": "Если передачи не было, отметьте not_applicable. Иначе проверьте сохранение контекста.",
+      "weight": 1,
+      "rule": {"type": "manual"}
+    }
+  ]
+}
