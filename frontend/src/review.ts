@@ -33,6 +33,7 @@ export function currentEvaluation(c: Conversation, id = "") {
     c.evaluations[c.evaluations.length - 1]
   );
 }
+// цущзкопцу
 export function selectionFromQuery(c: Conversation, query: string) {
   const params = new URLSearchParams(query);
   const evaluation = c.evaluations.find(
