@@ -103,7 +103,8 @@ def fetch_dataset(url, group_id=GROUP):
             raw = b''.join(chunks)
     except error.HTTPError as exc:
         status = exc.code
-        exc.close()
+        if exc.fp is not None:
+            exc.close()
         raise IntegrationError(f'API организаторов вернул HTTP {status}; проверьте доступность подписанной ссылки.') from None
     except (error.URLError, OSError, TimeoutError, HTTPException):
         raise IntegrationError('Не удалось получить DEV-данные: ошибка сети или таймаут.') from None

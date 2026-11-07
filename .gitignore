@@ -17,6 +17,7 @@ yarn-debug.log*
 yarn-error.log*
 CQA_Hackathon_Student_Guide_v3.pdf
 CQA_Chat_Quality_Checklist 1.pdf
+CQA_Student_Guide_Appendix_Results.pdf
 data/raw/*
 
 # Private manual labels, dialogue exports, and Python caches
@@ -25,3 +26,6 @@ data/exports/
 data/releases/
 __pycache__/
 *.pyc
+.tools/
+.venv/
+data/runs/

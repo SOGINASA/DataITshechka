@@ -19,7 +19,8 @@ import webbrowser
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = Path(__file__).resolve().parent / "static"
-PROFILES = {"chat": "checklist.official.json", "voice": "checklist.voice.json"}
+PROFILES = {"chat": "checklist.official.json", "voice": "checklist.voice.json",
+            "voice_v2": "checklist.voice.v2.json"}
 
 
 def digest(value):
@@ -407,6 +408,8 @@ class Store:
             saved["human_verification"] = verification
         if baseline is not None:
             saved["review_baseline"] = baseline
+        if old and old.get('policy_migration'):
+            saved['policy_migration'] = deepcopy(old['policy_migration'])
         path = self.annotation_path(cid, annotator)
         if old:
             atomic_json(path.parent / "history" / f"{path.stem}-{revision}.json", old)

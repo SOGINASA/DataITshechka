@@ -241,7 +241,9 @@ class AnnotationTests(unittest.TestCase):
         self.assertEqual(self.store.checklist["applicable_channels"], ["voice call"])
         self.assertNotEqual(self.store.checklist_hash, old_hash)
         self.assertIsNone(self.store.load(self.record["conversation_id"], "Алия"))
-        self.assertEqual({p["id"] for p in self.store.profiles()}, {"chat", "voice"})
+        self.assertEqual({p["id"] for p in self.store.profiles()}, {"chat", "voice", "voice_v2"})
+        self.store.select_profile("voice_v2")
+        self.assertTrue(self.store.checklist['criteria'][0]['na_allowed'])
         with self.assertRaises(ValueError):
             self.store.select_profile("../.env")
         self.store.set_checklist(old_checklist)

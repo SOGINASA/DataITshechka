@@ -59,6 +59,10 @@ class Config:
     OLLAMA_TIMEOUT = int(os.environ.get('OLLAMA_TIMEOUT', '120'))
     OLLAMA_NUM_CTX = int(os.environ.get('OLLAMA_NUM_CTX', '32768'))
     OLLAMA_NUM_PREDICT = int(os.environ.get('OLLAMA_NUM_PREDICT', '4096'))
+    OLLAMA_NUM_CTX_CALL = int(os.environ['OLLAMA_NUM_CTX_CALL']) if os.environ.get('OLLAMA_NUM_CTX_CALL') else None
+    OLLAMA_NUM_PREDICT_CALL = int(os.environ['OLLAMA_NUM_PREDICT_CALL']) if os.environ.get('OLLAMA_NUM_PREDICT_CALL') else None
+    # None preserves the model default. Qwen3 local baseline uses false.
+    OLLAMA_THINK = {'true': True, 'false': False, '': None}[os.environ.get('OLLAMA_THINK', '').lower()]
 
 
 class DevelopmentConfig(Config):
