@@ -278,7 +278,7 @@ def test_ollama_structured_output_and_dynamic_rubric(app, client, official_evalu
 
 
 @pytest.mark.parametrize('case', ['missing', 'duplicate', 'bad_id', 'bad_score', 'forbidden_na', 'no_evidence', 'truncated'])
-def test_bad_model_output_never_persists(app, client, official_evaluation, monkeypatch, case):
+def test_bad_model_output_does_not_persist_unreviewed_values(app, client, official_evaluation, monkeypatch, case):
     app.config['OLLAMA_MODEL'] = 'synthetic-test-model'
     output = model_results()
     if case == 'missing':
@@ -296,6 +296,12 @@ def test_bad_model_output_never_persists(app, client, official_evaluation, monke
     mock_ollama(monkeypatch, output, {'done_reason': 'length'} if case == 'truncated' else None)
     url = f'/api/conversations/{official_evaluation["conversation_id"]}/evaluations'
     response = client.post(url, json={'checklist_id': official_evaluation['checklist_id']})
+    if case == 'no_evidence':
+        assert response.status_code == 201, response.json
+        result = next(item for item in response.json['results'] if item['criterion_id'] == 'contact')
+        assert result['status'] == 'needs_review' and result['value'] is None
+        assert client.get(url).json['pagination']['total'] == 2
+        return
     assert response.status_code == 502
     assert client.get(url).json['pagination']['total'] == 1
 
