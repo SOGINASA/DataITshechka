@@ -14,3 +14,13 @@ frontend/build/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+CQA_Hackathon_Student_Guide_v3.pdf
+CQA_Chat_Quality_Checklist 1.pdf
+data/raw/*
+
+# Private manual labels, dialogue exports, and Python caches
+data/annotations/
+data/exports/
+data/releases/
+__pycache__/
+*.pyc
