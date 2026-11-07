@@ -54,6 +54,11 @@ class Config:
 
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
     FREEDOM_API_URL = os.environ.get('FREEDOM_API_URL', '')
+    OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')
+    OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', '')
+    OLLAMA_TIMEOUT = int(os.environ.get('OLLAMA_TIMEOUT', '120'))
+    OLLAMA_NUM_CTX = int(os.environ.get('OLLAMA_NUM_CTX', '32768'))
+    OLLAMA_NUM_PREDICT = int(os.environ.get('OLLAMA_NUM_PREDICT', '4096'))
 
 
 class DevelopmentConfig(Config):

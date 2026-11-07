@@ -30,7 +30,7 @@ def obj(properties, required=(), strict=True):
 
 def specification():
     identifier = text(36)
-    status = enum('pass', 'fail', 'not_applicable', 'needs_review')
+    status = enum('pass', 'fail', 'scored', 'not_applicable', 'needs_review')
     timestamp = {'type': 'string', 'format': 'date-time'}
     millisecond = {'type': ['integer', 'null'], 'minimum': 0, 'maximum': 86400000}
     message = obj({'id': text(80), 'speaker': enum('client', 'operator', 'bot', 'system'),
@@ -41,35 +41,52 @@ def specification():
                         'messages': array(ref('Message'), 2000, 1)}, ('title', 'channel', 'language', 'messages'))
     terms = obj({language: array(text(200), 30, 1) for language in ('ru', 'kk', 'en')})
     terms['minProperties'] = 1
-    rule = {'oneOf': [obj({'type': enum('manual')}, ('type',)),
+    rule = {'oneOf': [obj({'type': enum('manual', 'semantic')}, ('type',)),
                       obj({'type': enum('contains_any', 'contains_none'),
                            'speaker': enum('client', 'operator', 'bot', 'system', 'any'),
                            'terms': terms}, ('type', 'terms'))]}
     criterion = obj({'id': {**text(80), 'pattern': '^[a-zA-Z0-9_-]+$'}, 'title': text(200),
-                     'description': text(4000, minimum=0), 'weight': {'type': 'number', 'minimum': 0.01, 'maximum': 100},
-                     'critical': {'type': 'boolean'}, 'rule': ref('Rule')}, ('id', 'title'))
+                     'description': text(4000, minimum=0), 'weight': {'type': 'number', 'minimum': 0, 'maximum': 100},
+                     'critical': {'type': 'boolean'}, 'rule': ref('Rule'),
+                     'answer_type': enum('binary', 'scale', 'flag'), 'allow_na': {'type': 'boolean'},
+                     'na_condition': text(2000, minimum=0), 'section': text(200, minimum=0),
+                     'require_evidence': {'type': 'boolean'},
+                     'scale': array(obj({'value': {'type': 'number', 'minimum': 0, 'maximum': 1000},
+                                         'label': text(2000)}, ('value', 'label')), 30)}, ('id', 'title'))
     checklist = obj({'name': text(160), 'version': text(40), 'description': text(4000, minimum=0),
                      'is_demo': {'type': 'boolean'}, 'criteria': array(ref('Criterion'), 100, 1)}, ('name', 'version', 'criteria'))
     evidence = obj({'message_id': text(80), 'quote': text(10000), 'start_ms': millisecond,
-                    'end_ms': millisecond, 'matched_terms': array(text(200), 30, 1)},
+                    'end_ms': millisecond, 'matched_terms': array(text(200), 30)},
                    ('message_id', 'quote', 'start_ms', 'end_ms', 'matched_terms'))
     result = obj({'criterion_id': text(80), 'title': text(200), 'weight': {'type': 'number'},
-                  'critical': {'type': 'boolean'}, 'status': status, 'source': enum('baseline', 'human'),
+                  'critical': {'type': 'boolean'}, 'status': status, 'source': enum('baseline', 'human', 'model'),
                   'evidence': array(ref('Evidence')), 'explanation': text(4000)},
                  ('criterion_id', 'title', 'weight', 'critical', 'status', 'source', 'evidence', 'explanation'))
+    span = obj({'start_message_id': text(80), 'end_message_id': text(80)}, ('start_message_id', 'end_message_id'))
+    for key in ('answer_type', 'allow_na', 'na_condition', 'section', 'require_evidence', 'scale'):
+        result['properties'][key] = criterion['properties'][key]
+    result['properties'].update(value={'type': ['boolean', 'number', 'null']}, reviewed_range=span,
+                                points={'type': ['number', 'null']}, effective_weight={'type': 'number'},
+                                effective_points={'type': ['number', 'null']})
+    override = obj({'criterion_id': text(80), 'status': status, 'value': {'type': ['boolean', 'number', 'null']},
+                    'explanation': text(4000), 'evidence_message_ids': array(text(80), 50), 'reviewed_range': span},
+                   ('criterion_id', 'explanation'))
+    override['anyOf'] = [{'required': ['value']}, {'required': ['status']}]
     evaluation = obj({'id': identifier, 'conversation_id': identifier, 'checklist_id': identifier,
-                      'engine': enum('keyword-baseline-v1'), 'original_results': array(ref('Result')),
+                      'engine': text(80), 'original_results': array(ref('Result')),
                       'results': array(ref('Result')), 'revision': {'type': 'integer', 'minimum': 1},
                       'created_at': timestamp, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 100},
                       'coverage': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 100},
                       'needs_review': {'type': 'boolean'}, 'critical_failures': array(text(80)),
                       'counts': obj({s: {'type': 'integer', 'minimum': 0} for s in status['enum']}, status['enum'])})
     evaluation['required'] = list(evaluation['properties'])
+    evaluation['properties'].update(final_score={'type': ['number', 'null']}, score_is_partial={'type': 'boolean'},
+                                    applicable_weight={'type': 'number'}, gross_error_detected={'type': ['boolean', 'null']},
+                                    sections=array(obj({}, strict=False)), original_summary=obj({}, strict=False),
+                                    run_metadata={'anyOf': [{'type': 'null'}, obj({}, strict=False)]})
     review_input = obj({'expected_revision': {'type': 'integer', 'minimum': 1, 'maximum': 2147483647},
                         'reviewer': {**text(120), 'description': 'Свободная подпись, не подтверждённая учётная запись.'},
-                        'comment': text(4000), 'overrides': array(obj({'criterion_id': text(80), 'status': status,
-                                                                      'explanation': text(4000)},
-                                                                     ('criterion_id', 'status', 'explanation')), 100, 1)},
+                        'comment': text(4000), 'overrides': array(override, 100, 1)},
                        ('expected_revision', 'reviewer', 'comment', 'overrides'))
     review = obj({'id': identifier, 'evaluation_id': identifier, 'revision': {'type': 'integer'},
                   'reviewer': text(120), 'comment': text(4000), 'created_at': timestamp,
@@ -85,7 +102,7 @@ def specification():
     conversation_summary['required'].remove('messages')
     conversation_output['properties']['source_metadata'] = {
         'anyOf': [{'type': 'null'}, obj({
-            'provider': enum('freedom'), 'dataset_group_id': enum('DEV'), 'conversation_id': text(120),
+            'provider': enum('freedom'), 'dataset_group_id': text(24), 'conversation_id': text(120),
             'timestamp_reference': enum('conversation_start', 'first_message'),
             'time_origin': text(80, True), 'audio_alignment_verified': {'type': 'boolean'},
             'source_timestamps': {'type': 'object', 'additionalProperties': text(80)}
@@ -102,9 +119,18 @@ def specification():
                                         ('code', 'message'))}, ('error',)),
                'Pagination': obj({p: {'type': 'integer'} for p in ('page', 'per_page', 'total', 'pages')},
                                  ('page', 'per_page', 'total', 'pages'))}
+    appeal = obj({'id': identifier, 'evaluation_id': identifier, 'criterion_id': text(80),
+                  'evaluation_revision': {'type': 'integer'}, 'revision': {'type': 'integer'},
+                  'author': text(120), 'comment': text(4000), 'disputed_result': ref('Result'),
+                  'status': enum('open', 'resolved'), 'decision': {'type': ['string', 'null'], 'enum': ['confirm', 'change', None]},
+                  'review_id': text(36, True), 'created_at': timestamp,
+                  'resolved_at': {'type': ['string', 'null'], 'format': 'date-time'}})
+    appeal['required'] = list(appeal['properties'])
+    schemas['Appeal'] = appeal
+    schemas['AssessmentOverride'] = override
     paths = {}
 
-    def operation(path, method, summary, response, request=None, paginated=False, filters=None):
+    def operation(path, method, summary, response, request=None, paginated=False, filters=None, success_code=None):
         parameters = []
         for part in path.split('/'):
             if part.startswith('{'):
@@ -116,7 +142,7 @@ def specification():
             response = obj({'items': array(response), 'pagination': ref('Pagination')}, ('items', 'pagination'))
         for name, schema in (filters or {}).items():
             parameters.append({'name': name, 'in': 'query', 'schema': schema})
-        code = '201' if method == 'post' else '200'
+        code = success_code or ('201' if method == 'post' else '200')
         data = {'summary': summary, 'operationId': method + '_' + path.replace('/api', '').strip('/').replace('/', '_').replace('{', '').replace('}', ''),
                 'parameters': parameters, 'responses': {code: {'description': 'Успех', 'content': {'application/json': {'schema': response}}},
                                                        'default': {'description': 'Ошибка (400/404/409/413/415/422/500/503)',
@@ -132,7 +158,8 @@ def specification():
         'schema': obj({'status': enum('database_unavailable_or_uninitialized')}, ('status',))}}}
     operation('/api/openapi.json', 'get', 'OpenAPI 3.1', obj({}, strict=False))
     operation('/api/conversations', 'get', 'Диалоги', ref('ConversationSummary'), paginated=True,
-              filters={'channel': enum('chat', 'call'), 'language': enum('ru', 'kk', 'en'), 'external_id': text(160)})
+              filters={'channel': enum('chat', 'call'), 'language': enum('ru', 'kk', 'en'), 'external_id': text(160),
+                       'dataset_group_id': {**text(24), 'pattern': '^[A-Za-z0-9_-]+$'}})
     operation('/api/conversations', 'post', 'Добавить диалог', ref('Conversation'), ref('ConversationInput'))
     operation('/api/conversations/import', 'post', 'Атомарный импорт до 100 диалогов',
               obj({'items': array(ref('ConversationSummary')), 'imported': {'type': 'integer'}}, ('items', 'imported')),
@@ -141,18 +168,36 @@ def specification():
     operation('/api/checklists', 'get', 'Версии чек-листов', ref('Checklist'), paginated=True)
     operation('/api/checklists', 'post', 'Добавить неизменяемую версию чек-листа', ref('Checklist'), ref('ChecklistInput'))
     operation('/api/checklists/{checklist_id}', 'get', 'Чек-лист', ref('Checklist'))
+    operation('/api/checklists/{checklist_id}/versions', 'post', 'Сохранить изменения новой версией', ref('Checklist'),
+              obj({'version': text(40), 'name': text(160), 'description': text(4000, minimum=0),
+                   'criteria': array(ref('Criterion'), 100, 1)}, ('version',)))
     operation('/api/conversations/{conversation_id}/evaluations', 'get', 'История оценок', ref('Evaluation'), paginated=True)
     operation('/api/conversations/{conversation_id}/evaluations', 'post', 'Синхронная оценка по выбранному чек-листу', ref('Evaluation'),
-              obj({'checklist_id': identifier}, ('checklist_id',)))
+              obj({'checklist_id': identifier, 'engine': enum('auto', 'baseline', 'ollama')}, ('checklist_id',)))
     operation('/api/evaluations/{evaluation_id}', 'get', 'Исходная и текущая оценка', ref('Evaluation'))
     operation('/api/evaluations/{evaluation_id}/reviews', 'get', 'История ручных решений', ref('Review'), paginated=True)
     operation('/api/evaluations/{evaluation_id}/reviews', 'post', 'Ручной пересмотр; конфликт ревизии возвращает 409',
               obj({'review': ref('Review'), 'evaluation': ref('Evaluation')}, ('review', 'evaluation')), ref('ReviewInput'))
     operation('/api/evaluations/{evaluation_id}/export', 'get', 'Полный JSON-отчёт с историей',
               obj({'schema_version': enum('1.0'), 'conversation': ref('Conversation'), 'checklist': ref('Checklist'),
-                   'evaluation': ref('Evaluation'), 'reviews': array(ref('Review'))},
-                  ('schema_version', 'conversation', 'checklist', 'evaluation', 'reviews')))
+                   'evaluation': ref('Evaluation'), 'reviews': array(ref('Review')), 'appeals': array(ref('Appeal'))},
+                  ('schema_version', 'conversation', 'checklist', 'evaluation', 'reviews', 'appeals')))
+    operation('/api/evaluations/{evaluation_id}/appeals', 'get', 'История апелляций', ref('Appeal'), paginated=True)
+    operation('/api/evaluations/{evaluation_id}/appeals', 'post', 'Подать апелляцию по критерию', ref('Appeal'),
+              obj({'criterion_id': text(80), 'expected_revision': {'type': 'integer', 'minimum': 1, 'maximum': 2147483647},
+                   'author': text(120), 'comment': text(4000)}, ('criterion_id', 'expected_revision', 'author', 'comment')))
+    operation('/api/appeals/{appeal_id}', 'get', 'Спорная оценка и состояние апелляции', ref('Appeal'))
+    operation('/api/appeals/{appeal_id}/decision', 'post', 'Решение проверяющего с пересчётом итога',
+              obj({'appeal': ref('Appeal'), 'review': ref('Review'), 'evaluation': ref('Evaluation')}, ('appeal', 'review', 'evaluation')),
+              obj({'expected_revision': {'type': 'integer', 'minimum': 1, 'maximum': 2147483647}, 'reviewer': text(120),
+                   'reason': text(4000), 'decision': enum('confirm', 'change'), 'override': ref('AssessmentOverride')},
+                  ('expected_revision', 'reviewer', 'reason', 'decision')), success_code='200')
+    operation('/api/datasets/import', 'post', 'Импорт DEV или контрольной группы через сервер',
+              obj({'dataset_group_id': text(24), 'received': {'type': 'integer'}, 'imported': {'type': 'integer'},
+                   'pending': {'type': 'integer'}, 'skipped': {'type': 'integer'}, 'dry_run': {'type': 'boolean'}},
+                  ('dataset_group_id', 'received', 'imported', 'pending', 'skipped', 'dry_run')),
+              obj({'group_id': {**text(24), 'pattern': '^[A-Za-z0-9_-]+$'}, 'dry_run': {'type': 'boolean'}}, ('group_id',)), success_code='200')
     operation('/api/stats', 'get', 'Счётчики диалогов, оценок и пересмотров', obj({}, strict=False))
-    return {'openapi': '3.1.0', 'info': {'title': 'CQA API', 'version': '1.0.0',
-            'description': 'Прототип без авторизации. Keyword baseline требует подтверждения человеком; официальный чек-лист предоставляется отдельно.'},
+    return {'openapi': '3.1.0', 'info': {'title': 'CQA API', 'version': '1.1.0',
+            'description': 'Прототип без авторизации: официальный чек-лист, шкалы, N/A, апелляции и локальный Ollama.'},
             'servers': [{'url': '/'}], 'security': [], 'paths': paths, 'components': {'schemas': schemas}}
