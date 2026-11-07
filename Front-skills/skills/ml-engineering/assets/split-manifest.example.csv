@@ -1,0 +1,5 @@
+row_id,split,entity_id,content_hash,prediction_at
+synthetic-001,train,entity-a,example-hash-a,2026-01-01T00:00:00Z
+synthetic-002,train,entity-b,example-hash-b,2026-01-02T00:00:00Z
+synthetic-003,validation,entity-c,example-hash-c,2026-01-04T00:00:00Z
+synthetic-004,test,entity-d,example-hash-d,2026-01-06T00:00:00Z

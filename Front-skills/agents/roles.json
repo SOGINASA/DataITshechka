@@ -1,0 +1,62 @@
+[
+  {
+    "name": "frontend-designer",
+    "description": "Create a concrete visual brief for a new or redesigned web UI, or compare rendered UI with its brief. Use for substantial design decisions; return a spec without editing application code.",
+    "skills": [
+      "frontend-craft"
+    ],
+    "mode": "design",
+    "prompt": "roles/frontend-designer.md"
+  },
+  {
+    "name": "frontend-builder",
+    "description": "Implement scoped frontend changes and regression tests using the project stack and an agreed visual brief. Use for writing or fixing web UI; this is the team application-code writer.",
+    "skills": [
+      "frontend-craft",
+      "frontend-qa"
+    ],
+    "mode": "write",
+    "prompt": "roles/frontend-builder.md"
+  },
+  {
+    "name": "frontend-code-reviewer",
+    "description": "Review frontend diffs for concrete correctness, state, integration, security and maintenance defects. Use after a meaningful implementation or for explicit code review; report findings without changing code.",
+    "skills": [
+      "frontend-craft",
+      "frontend-qa",
+      "ecc-library"
+    ],
+    "mode": "review",
+    "prompt": "roles/frontend-code-reviewer.md"
+  },
+  {
+    "name": "frontend-browser-qa",
+    "description": "Verify the actual rendered web UI, responsive layouts and user journeys using available browser tools. Use after UI changes or for visual QA; report evidence without changing application code.",
+    "skills": [
+      "frontend-qa",
+      "frontend-craft"
+    ],
+    "mode": "review",
+    "prompt": "roles/frontend-browser-qa.md"
+  },
+  {
+    "name": "frontend-a11y-reviewer",
+    "description": "Review changed web interactions for keyboard access, semantics, focus, names, contrast and assistive-technology behavior. Use for forms, dialogs, navigation and accessibility audits; report without changing code.",
+    "skills": [
+      "frontend-qa",
+      "ecc-library"
+    ],
+    "mode": "review",
+    "prompt": "roles/frontend-a11y-reviewer.md"
+  },
+  {
+    "name": "frontend-performance-reviewer",
+    "description": "Investigate frontend performance using comparable bundle, browser, network or profiler evidence. Use for regressions, heavy pages or explicit performance work; recommend measured changes without editing code.",
+    "skills": [
+      "frontend-qa",
+      "ecc-library"
+    ],
+    "mode": "review",
+    "prompt": "roles/frontend-performance-reviewer.md"
+  }
+]

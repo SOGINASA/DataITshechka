@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "files": 12,
+  "local_references_self_contained": true,
+  "errors": [],
+  "scope": "Copied skill resolves all local Markdown resources without the ECC kit; not a backend execution test."
+}

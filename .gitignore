@@ -1,0 +1,16 @@
+# Node.js dependencies and build output
+node_modules/
+**/node_modules/
+frontend/build/
+**/coverage/
+
+# Local environment and operating system files
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

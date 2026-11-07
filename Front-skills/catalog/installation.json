@@ -1,0 +1,91 @@
+{
+  "action": "install",
+  "applied": true,
+  "kit_root": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit",
+  "skills": [
+    {
+      "host": "codex",
+      "skill": "frontend-craft",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-craft",
+      "destination": "/Users/artempinigin/.agents/skills/frontend-craft",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "skill": "frontend-qa",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-qa",
+      "destination": "/Users/artempinigin/.agents/skills/frontend-qa",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "skill": "ecc-library",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/ecc-library",
+      "destination": "/Users/artempinigin/.agents/skills/ecc-library",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "skill": "ml-engineering",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/ml-engineering",
+      "destination": "/Users/artempinigin/.agents/skills/ml-engineering",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "skill": "backend-engineering",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/backend-engineering",
+      "destination": "/Users/artempinigin/.agents/skills/backend-engineering",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "skill": "frontend-team",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-team",
+      "destination": "/Users/artempinigin/.agents/skills/frontend-team",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "frontend-craft",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-craft",
+      "destination": "/Users/artempinigin/.claude/skills/frontend-craft",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "frontend-qa",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-qa",
+      "destination": "/Users/artempinigin/.claude/skills/frontend-qa",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "ecc-library",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/ecc-library",
+      "destination": "/Users/artempinigin/.claude/skills/ecc-library",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "ml-engineering",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/ml-engineering",
+      "destination": "/Users/artempinigin/.claude/skills/ml-engineering",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "backend-engineering",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/backend-engineering",
+      "destination": "/Users/artempinigin/.claude/skills/backend-engineering",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "skill": "frontend-team",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/skills/frontend-team",
+      "destination": "/Users/artempinigin/.claude/skills/frontend-team",
+      "state": "installed"
+    }
+  ]
+}

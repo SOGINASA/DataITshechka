@@ -1,0 +1,17 @@
+backend-engineering: exit=0
+Skill is valid!
+
+ecc-library: exit=0
+Skill is valid!
+
+frontend-craft: exit=0
+Skill is valid!
+
+frontend-qa: exit=0
+Skill is valid!
+
+frontend-team: exit=0
+Skill is valid!
+
+ml-engineering: exit=0
+Skill is valid!

@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-30",
+  "codex_cli_version": "0.159.0",
+  "claude_cli_found": false,
+  "role_count": 6,
+  "native_files": 12,
+  "results": [
+    {
+      "host": "codex",
+      "name": "frontend-designer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "e012da5588aebf6c570fd9894c2073cb6953f69c683bd523bf2a42b20c81dc34"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-designer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "1d55469318aeba2a196429b04bb3f59d5136cc3dcf6be572bae5bf0e67c86b0f"
+    },
+    {
+      "host": "codex",
+      "name": "frontend-builder",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "1a9ac5be0e3484044fdc73ef68c84f9362e4a94f2f711e3e8ee8b6a187bc5332"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-builder",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "f22840a7e5470851bbf7c9b9a2749d011997723a8ea612084c07a7f48e4051da"
+    },
+    {
+      "host": "codex",
+      "name": "frontend-code-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "1fab966de2e07bfcf10171e5f9f740c7fcd0363a1faa45c8f06e439beeb865ed"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-code-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "a062079e437558bf8a6aa5a10e7fca37a2b2a88abbb45911a42523c7d90121ad"
+    },
+    {
+      "host": "codex",
+      "name": "frontend-browser-qa",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "30ea4a42413eb3183e0e44d5fa72c4b0b78e445d9b6c9d9029a408566781f0d2"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-browser-qa",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "baaa86c80cec3b0a43474ffe997a40141d63cef802cb5c0d4bc8a00eb78b88fa"
+    },
+    {
+      "host": "codex",
+      "name": "frontend-a11y-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "ec960ff450bc20f253948393d839aee83b864b49aeb7b7734080e057e07f9026"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-a11y-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "fe0de7b3f2fdbeb61202ced6708ff8a43378b27050dd821053410ad01044607b"
+    },
+    {
+      "host": "codex",
+      "name": "frontend-performance-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "14158eaf0e68a48938e4ca2893c89f9e314c0ab1f0e9db38b70954e5a33a89ec"
+    },
+    {
+      "host": "claude",
+      "name": "frontend-performance-reviewer",
+      "parsed": true,
+      "installed_link": true,
+      "sha256": "d45186f50a4287cda1c3534714af3e20b454309b866c86c28d9591c6a617ecc1"
+    }
+  ],
+  "native_codex_invocations_tested": false,
+  "native_claude_invocations_tested": false,
+  "limits": "Syntax, sources, helper behavior and filesystem registration verified; no real UI/team execution."
+}

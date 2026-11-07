@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend QA"
+  short_description: "Визуальная проверка и сценарии интерфейса"
+  default_prompt: "Use $frontend-qa for the current task."

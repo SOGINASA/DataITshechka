@@ -1,0 +1,4 @@
+interface:
+  display_name: "ML Engineering"
+  short_description: "Reliable ML experiments, evaluation and integration"
+  default_prompt: "Use $ml-engineering to inspect this ML task, define valid evaluation, build a baseline and deliver a reproducible, measured result."

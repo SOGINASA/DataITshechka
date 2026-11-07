@@ -1,0 +1,91 @@
+{
+  "action": "install",
+  "applied": true,
+  "kit_root": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit",
+  "agents": [
+    {
+      "host": "codex",
+      "agent": "frontend-designer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-designer.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-designer.toml",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "agent": "frontend-builder",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-builder.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-builder.toml",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "agent": "frontend-code-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-code-reviewer.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-code-reviewer.toml",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "agent": "frontend-browser-qa",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-browser-qa.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-browser-qa.toml",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "agent": "frontend-a11y-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-a11y-reviewer.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-a11y-reviewer.toml",
+      "state": "installed"
+    },
+    {
+      "host": "codex",
+      "agent": "frontend-performance-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/codex/frontend-performance-reviewer.toml",
+      "destination": "/Users/artempinigin/.codex/agents/frontend-performance-reviewer.toml",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-designer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-designer.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-designer.md",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-builder",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-builder.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-builder.md",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-code-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-code-reviewer.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-code-reviewer.md",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-browser-qa",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-browser-qa.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-browser-qa.md",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-a11y-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-a11y-reviewer.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-a11y-reviewer.md",
+      "state": "installed"
+    },
+    {
+      "host": "claude",
+      "agent": "frontend-performance-reviewer",
+      "source": "/Users/artempinigin/Documents/Codex/2026-10-30/new-chat/outputs/Frontend-Skills-Kit/agents/claude/frontend-performance-reviewer.md",
+      "destination": "/Users/artempinigin/.claude/agents/frontend-performance-reviewer.md",
+      "state": "installed"
+    }
+  ]
+}

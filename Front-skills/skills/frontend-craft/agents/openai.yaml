@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Craft · Forte"
+  short_description: "Качественный web UI по референсам Forte"
+  default_prompt: "Use $frontend-craft for the current task."

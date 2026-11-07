@@ -1,0 +1,4 @@
+interface:
+  display_name: "ECC Library · 311 skills"
+  short_description: "Подбор нужного скилла из локальной библиотеки"
+  default_prompt: "Use $ecc-library for the current task."

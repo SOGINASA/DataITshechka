@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Team"
+  short_description: "Дизайн, разработка и проверка фронтенда командой агентов"
+  default_prompt: "Use $frontend-team to build or review the requested frontend with the relevant specialist agents and verify the result."

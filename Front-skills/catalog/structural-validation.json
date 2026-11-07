@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "authored_skills": 6,
+  "ecc_skills": 311,
+  "reference_images": 63,
+  "frontend_agents": 6,
+  "native_agent_files": 12,
+  "errors": [],
+  "scope": "Structural/integrity checks, not model behavior or full upstream audit."
+}

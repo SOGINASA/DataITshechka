@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "rows_read": 4,
+  "valid_rows_by_split": {
+    "train": 2,
+    "validation": 1,
+    "test": 1
+  },
+  "checks": {
+    "unique_row_ids": true,
+    "group_disjoint": true,
+    "fingerprint_disjoint": true,
+    "time_order": true,
+    "gap_seconds": 86400.0,
+    "validation_required": true
+  },
+  "issues": [],
+  "limitations": [
+    "PASS covers only enabled manifest checks; it does not prove absence of leakage.",
+    "No feature lineage, label-window, preprocessing, near-duplicate or metric audit.",
+    "Timestamps are prediction/event times; gaps do not certify label availability."
+  ]
+}

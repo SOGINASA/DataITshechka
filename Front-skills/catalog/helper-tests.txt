@@ -1,0 +1,32 @@
+test_alternate_kit_path_escapes_and_works (test_agents.AgentTests.test_alternate_kit_path_escapes_and_works) ... ok
+test_cli_is_preview_by_default (test_agents.AgentTests.test_cli_is_preview_by_default) ... ok
+test_configuration_files_untouched (test_agents.AgentTests.test_configuration_files_untouched) ... ok
+test_foreign_dangling_link_is_not_removed (test_agents.AgentTests.test_foreign_dangling_link_is_not_removed) ... ok
+test_install_twice_and_remove_only_ours (test_agents.AgentTests.test_install_twice_and_remove_only_ours) ... ok
+test_late_host_conflict_prevents_all_installation (test_agents.AgentTests.test_late_host_conflict_prevents_all_installation) ... ok
+test_native_roundtrip_and_knowledge_paths (test_agents.AgentTests.test_native_roundtrip_and_knowledge_paths) ... ok
+test_partial_error_rolls_back_new_links (test_agents.AgentTests.test_partial_error_rolls_back_new_links) ... ok
+test_cli_preview_does_not_install (test_helpers.HelpersTest.test_cli_preview_does_not_install) ... ok
+test_collision_is_preflighted_before_any_write (test_helpers.HelpersTest.test_collision_is_preflighted_before_any_write) ... ok
+test_contrast_known_values_and_validation (test_helpers.HelpersTest.test_contrast_known_values_and_validation) ... ok
+test_dangling_foreign_symlink_is_preserved (test_helpers.HelpersTest.test_dangling_foreign_symlink_is_preserved) ... ok
+test_install_idempotent_and_safe_remove (test_helpers.HelpersTest.test_install_idempotent_and_safe_remove) ... ok
+test_search_exact_name_and_russian_alias (test_helpers.HelpersTest.test_search_exact_name_and_russian_alias) ... ok
+test_bad_headers_rows_blank_and_unknown_partitions (test_ml_audit.SplitAuditTest.test_bad_headers_rows_blank_and_unknown_partitions) ... ok
+test_cli_exit_codes_and_no_raw_values (test_ml_audit.SplitAuditTest.test_cli_exit_codes_and_no_raw_values) ... ok
+test_duplicate_observation_fails_across_and_within_partitions (test_ml_audit.SplitAuditTest.test_duplicate_observation_fails_across_and_within_partitions) ... ok
+test_fingerprint_detects_new_ids_for_copied_content (test_ml_audit.SplitAuditTest.test_fingerprint_detects_new_ids_for_copied_content) ... ok
+test_groups_optional_for_known_entity_forecast (test_ml_audit.SplitAuditTest.test_groups_optional_for_known_entity_forecast) ... ok
+test_invalid_options_rejected (test_ml_audit.SplitAuditTest.test_invalid_options_rejected) ... ok
+test_missing_file_and_malformed_quoted_csv (test_ml_audit.SplitAuditTest.test_missing_file_and_malformed_quoted_csv) ... ok
+test_naive_invalid_and_equal_timestamps_fail (test_ml_audit.SplitAuditTest.test_naive_invalid_and_equal_timestamps_fail) ... ok
+test_repeated_group_inside_partition_is_allowed (test_ml_audit.SplitAuditTest.test_repeated_group_inside_partition_is_allowed) ... ok
+test_synthetic_manifest_all_checks (test_ml_audit.SplitAuditTest.test_synthetic_manifest_all_checks) ... ok
+test_time_checks_actual_instants_not_lexical_dates (test_ml_audit.SplitAuditTest.test_time_checks_actual_instants_not_lexical_dates) ... ok
+test_unsorted_rows_and_overlapping_time_extrema (test_ml_audit.SplitAuditTest.test_unsorted_rows_and_overlapping_time_extrema) ... ok
+test_validation_alias_and_required_validation (test_ml_audit.SplitAuditTest.test_validation_alias_and_required_validation) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.229s
+
+OK
