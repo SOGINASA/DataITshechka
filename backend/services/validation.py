@@ -103,25 +103,47 @@ def checklist(value):
         fail('is_demo: ожидается boolean.')
     criteria, ids = [], set()
     for criterion in sequence(value['criteria'], 'criteria', 100):
-        obj(criterion, ('id', 'title', 'description', 'weight', 'critical', 'rule'), ('id', 'title'))
+        obj(criterion, ('id', 'title', 'description', 'weight', 'critical', 'rule', 'answer_type',
+                        'allow_na', 'na_condition', 'scale', 'section', 'require_evidence'), ('id', 'title'))
         cid = string(criterion['id'], 'criterion.id', 80)
         if not re.fullmatch(r'[a-zA-Z0-9_-]+', cid) or cid in ids:
             fail('criterion.id: уникальный код из латинских букв, цифр, _ и -.')
         ids.add(cid)
+        answer_type = choice(criterion.get('answer_type', 'binary'), 'answer_type', ('binary', 'scale', 'flag'))
         item = {'id': cid, 'title': string(criterion['title'], 'criterion.title', 200),
                 'description': string(criterion.get('description', ''), 'criterion.description', 4000, empty=True),
-                'weight': number(criterion.get('weight', 1), 'weight', 0.01, 100),
-                'critical': criterion.get('critical', False)}
-        if type(item['critical']) is not bool:
-            fail('critical: ожидается boolean.')
+                'weight': number(criterion.get('weight', 0 if answer_type == 'flag' else 1), 'weight', 0 if answer_type == 'flag' else 0.01, 0 if answer_type == 'flag' else 100),
+                'critical': criterion.get('critical', answer_type == 'flag'), 'answer_type': answer_type,
+                'allow_na': criterion.get('allow_na', 'answer_type' not in criterion),
+                'na_condition': string(criterion.get('na_condition', '' if 'answer_type' in criterion else 'По условиям пользовательского чек-листа.'), 'na_condition', 2000, empty=True),
+                'section': string(criterion.get('section', ''), 'section', 200, empty=True),
+                'require_evidence': criterion.get('require_evidence', False)}
+        for field in ('critical', 'allow_na', 'require_evidence'):
+            if type(item[field]) is not bool:
+                fail(f'{field}: ожидается boolean.')
+        if item['allow_na'] and 'answer_type' in criterion and not item['na_condition']:
+            fail('Для N/A задайте na_condition.')
+        item['scale'] = []
+        if answer_type == 'scale':
+            for step in sequence(criterion.get('scale'), 'scale', 30):
+                obj(step, ('value', 'label'), ('value', 'label'))
+                item['scale'].append({'value': number(step['value'], 'scale.value', 0, 1000),
+                                      'label': string(step['label'], 'scale.label', 2000)})
+            values = [step['value'] for step in item['scale']]
+            if values != sorted(set(values)) or values[0] != 0 or values[-1] <= 0:
+                fail('Шкала должна начинаться с 0, возрастать без повторов и иметь положительный максимум.')
+        elif criterion.get('scale'):
+            fail('scale допускается только для answer_type=scale.')
         rule = criterion.get('rule', {'type': 'manual'})
         obj(rule, ('type', 'speaker', 'terms'), ('type',))
-        kind = choice(rule['type'], 'rule.type', ('manual', 'contains_any', 'contains_none'))
-        if kind == 'manual':
+        kind = choice(rule['type'], 'rule.type', ('manual', 'semantic', 'contains_any', 'contains_none'))
+        if kind in ('manual', 'semantic'):
             if set(rule) != {'type'}:
-                fail('Для manual допустимо только поле type.')
-            item['rule'] = {'type': 'manual'}
+                fail('Для manual/semantic допустимо только поле type.')
+            item['rule'] = {'type': kind}
         else:
+            if answer_type != 'binary':
+                fail('Поиск фраз поддерживается только для binary. Для шкал и флагов используйте manual или semantic.')
             speaker = choice(rule.get('speaker', 'operator'), 'rule.speaker', ('client', 'operator', 'bot', 'system', 'any'))
             terms = obj(rule.get('terms'), ('ru', 'kk', 'en'))
             if not terms:
@@ -142,13 +164,40 @@ def review(value):
               'comment': string(value['comment'], 'comment', 4000)}
     overrides, ids = [], set()
     for override in sequence(value['overrides'], 'overrides', 100):
-        obj(override, ('criterion_id', 'status', 'explanation'), ('criterion_id', 'status', 'explanation'))
+        obj(override, ('criterion_id', 'status', 'value', 'explanation', 'evidence_message_ids', 'reviewed_range'),
+            ('criterion_id', 'explanation'))
         cid = string(override['criterion_id'], 'criterion_id', 80)
         if cid in ids:
             fail('Повтор criterion_id в overrides.')
         ids.add(cid)
-        overrides.append({'criterion_id': cid,
-                          'status': choice(override['status'], 'status', ('pass', 'fail', 'not_applicable', 'needs_review')),
-                          'explanation': string(override['explanation'], 'explanation', 4000)})
+        overrides.append(assessment_item(override))
     result['overrides'] = overrides
     return result
+
+
+def assessment_item(value):
+    obj(value, ('criterion_id', 'status', 'value', 'explanation', 'evidence_message_ids', 'reviewed_range'),
+        ('criterion_id', 'explanation'))
+    result = {'criterion_id': string(value['criterion_id'], 'criterion_id', 80),
+              'explanation': string(value['explanation'], 'explanation', 4000)}
+    if 'status' not in value and 'value' not in value:
+        fail('Укажите status или value.')
+    if 'status' in value:
+        result['status'] = choice(value['status'], 'status', ('pass', 'fail', 'scored', 'not_applicable', 'needs_review'))
+    if 'value' in value:
+        result['value'] = value['value']
+    if 'evidence_message_ids' in value:
+        result['evidence_message_ids'] = [string(mid, 'message_id', 80)
+                                          for mid in sequence(value['evidence_message_ids'], 'evidence_message_ids', 50, nonempty=False)]
+    if 'reviewed_range' in value:
+        span = obj(value['reviewed_range'], ('start_message_id', 'end_message_id'), ('start_message_id', 'end_message_id'))
+        result['reviewed_range'] = {k: string(v, k, 80) for k, v in span.items()}
+    return result
+
+
+def appeal(value):
+    obj(value, ('criterion_id', 'expected_revision', 'comment', 'author'),
+        ('criterion_id', 'expected_revision', 'comment', 'author'))
+    return {'criterion_id': string(value['criterion_id'], 'criterion_id', 80),
+            'expected_revision': number(value['expected_revision'], 'expected_revision', 1, 2147483647, integer=True),
+            'comment': string(value['comment'], 'comment', 4000), 'author': string(value['author'], 'author', 120)}

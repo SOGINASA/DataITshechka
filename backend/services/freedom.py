@@ -1,11 +1,11 @@
-"""Adapter for the observed Freedom DEV dataset envelope; no guessed API methods."""
+"""Adapter for organizer datasets; group IDs are supplied explicitly."""
 import json
 import re
 import time
 from http.client import HTTPException
 from datetime import datetime, timedelta
 from urllib import error, request
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -31,7 +31,29 @@ class NoRedirect(request.HTTPRedirectHandler):
         return None
 
 
-def validate_url(url):
+def validate_group(group_id):
+    if not isinstance(group_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,24}', group_id):
+        raise IntegrationError('group_id: от 1 до 24 латинских букв, цифр, _ или -.')
+    return group_id
+
+
+def dataset_url(url, group_id):
+    validate_group(group_id)
+    # Validate the configured signed host before replacing only the dataset selector.
+    try:
+        current = parse_qs(urlsplit(url).query).get('group_id', [])
+        if len(current) != 1:
+            raise IntegrationError('FREEDOM_API_URL должен содержать один group_id.')
+        validate_url(url, current[0])
+        parts = urlsplit(url)
+        query = [(key, group_id if key == 'group_id' else value) for key, value in parse_qsl(parts.query, keep_blank_values=True)]
+        return urlunsplit(parts._replace(query=urlencode(query)))
+    except (TypeError, ValueError):
+        raise IntegrationError('Проверьте FREEDOM_API_URL и group_id.') from None
+
+
+def validate_url(url, group_id=GROUP):
+    validate_group(group_id)
     if not isinstance(url, str) or not url:
         raise IntegrationError('Задайте FREEDOM_API_URL в локальном .env.')
     try:
@@ -39,49 +61,50 @@ def validate_url(url):
         valid = (parts.scheme == 'https' and parts.hostname
                  and parts.hostname.endswith('.environment.api.powerplatform.com')
                  and parts.port in (None, 443) and not parts.username and not parts.password
-                 and not parts.fragment and parse_qs(parts.query).get('group_id') == [GROUP])
+                 and not parts.fragment and parse_qs(parts.query).get('group_id') == [group_id])
     except ValueError:
         valid = False
     if not valid:
-        raise IntegrationError('FREEDOM_API_URL должен быть HTTPS URL Power Platform с group_id=DEV.')
+        raise IntegrationError('FREEDOM_API_URL должен быть HTTPS URL Power Platform с ожидаемым group_id.')
 
 
 def decode_payload(raw):
     if len(raw) > MAX_RESPONSE_BYTES:
-        raise IntegrationError('Ответ DEV API превышает 8 МиБ.')
+        raise IntegrationError('Ответ API организаторов превышает 8 МиБ.')
     try:
         return json.loads(raw)
     except (ValueError, UnicodeError, RecursionError):
-        raise IntegrationError('DEV API вернул некорректный JSON.') from None
+        raise IntegrationError('API организаторов вернул некорректный JSON.') from None
 
 
-def fetch_dataset(url):
-    validate_url(url)
+def fetch_dataset(url, group_id=GROUP):
+    url = dataset_url(url, group_id)
+    validate_url(url, group_id)
     started = time.monotonic()
     req = request.Request(url, headers={'Accept': 'application/json', 'User-Agent': 'CQA-DEV-import/1.0'}, method='GET')
     try:
         # Do not forward the signature to another host, or retry a workflow invocation.
         with request.build_opener(NoRedirect).open(req, timeout=TIMEOUT_SECONDS) as response:
             if response.status != 200:
-                raise IntegrationError(f'DEV API вернул HTTP {response.status}.')
+                raise IntegrationError(f'API организаторов вернул HTTP {response.status}.')
             if response.headers.get_content_type() != 'application/json':
-                raise IntegrationError('DEV API вернул ответ не в формате application/json.')
+                raise IntegrationError('API организаторов вернул ответ не в формате application/json.')
             chunks, size = [], 0
             while True:
                 if time.monotonic() - started > TIMEOUT_SECONDS:
-                    raise IntegrationError('Превышено время ожидания DEV API.')
+                    raise IntegrationError('Превышено время ожидания API организаторов.')
                 chunk = response.read1(min(65536, MAX_RESPONSE_BYTES + 1 - size))
                 if not chunk:
                     break
                 chunks.append(chunk)
                 size += len(chunk)
                 if size > MAX_RESPONSE_BYTES:
-                    raise IntegrationError('Ответ DEV API превышает 8 МиБ.')
+                    raise IntegrationError('Ответ API организаторов превышает 8 МиБ.')
             raw = b''.join(chunks)
     except error.HTTPError as exc:
         status = exc.code
         exc.close()
-        raise IntegrationError(f'DEV API вернул HTTP {status}; проверьте доступность подписанной ссылки.') from None
+        raise IntegrationError(f'API организаторов вернул HTTP {status}; проверьте доступность подписанной ссылки.') from None
     except (error.URLError, OSError, TimeoutError, HTTPException):
         raise IntegrationError('Не удалось получить DEV-данные: ошибка сети или таймаут.') from None
     return decode_payload(raw)
@@ -107,16 +130,17 @@ def transcript_times(transcript):
     return times, 'first_message', values[0], values
 
 
-def normalize_dataset(payload):
+def normalize_dataset(payload, group_id=GROUP):
     """Validate the entire batch before it can touch the database."""
+    validate_group(group_id)
     try:
         obj(payload, ('error', 'isSuccess', 'data'), ('isSuccess', 'data'))
         if payload['isSuccess'] is not True or payload.get('error') not in (None, ''):
-            raise IntegrationError('DEV API сообщил об ошибке получения данных.')
+            raise IntegrationError('API организаторов сообщил об ошибке получения данных.')
         data = obj(payload['data'], ('dataset_group_id', 'total_records', 'records'),
                    ('dataset_group_id', 'total_records', 'records'))
-        if data['dataset_group_id'] != GROUP:
-            raise IntegrationError('Получен датасет другой группы; ожидается DEV.')
+        if data['dataset_group_id'] != group_id:
+            raise IntegrationError('Получен датасет другой группы; импорт отменён.')
         records = sequence(data['records'], 'records', 100, nonempty=False)
         if type(data['total_records']) is not int or data['total_records'] != len(records):
             raise IntegrationError('total_records не совпадает с размером массива records.')
@@ -139,12 +163,12 @@ def normalize_dataset(payload):
                 times, reference, origin, original_times = transcript_times(transcript)
                 messages = [{'id': str(i + 1), 'speaker': message['speaker'], 'text': message['text'], 'start_ms': times[i]}
                             for i, message in enumerate(transcript)]
-                item = conversation({'external_id': f'freedom:{GROUP}:{source_id}',
-                                     'title': f'{GROUP} · {source_id}', 'channel': channel, 'language': language,
+                item = conversation({'external_id': f'freedom:{group_id}:{source_id}',
+                                     'title': f'{group_id} · {source_id}', 'channel': channel, 'language': language,
                                      'recording_url': record.get('audio_url'), 'messages': messages})
                 for message, source in zip(item['messages'], transcript):
                     message['text'] = source['text']
-                item['source_metadata'] = {'provider': 'freedom', 'dataset_group_id': GROUP,
+                item['source_metadata'] = {'provider': 'freedom', 'dataset_group_id': group_id,
                                            'conversation_id': source_id, 'timestamp_reference': reference,
                                            'time_origin': origin, 'audio_alignment_verified': False,
                                            'source_timestamps': {str(i + 1): value for i, value in enumerate(original_times)}}
@@ -156,8 +180,8 @@ def normalize_dataset(payload):
         raise IntegrationError(f'Некорректный формат DEV-ответа: {exc}') from None
 
 
-def import_dataset(payload, dry_run=False):
-    items = normalize_dataset(payload)
+def import_dataset(payload, dry_run=False, group_id=GROUP):
+    items = normalize_dataset(payload, group_id)
     external_ids = [item['external_id'] for item in items]
     existing = {row.external_id: row for row in db.session.scalars(
         select(Conversation).where(Conversation.external_id.in_(external_ids)))}
@@ -177,5 +201,5 @@ def import_dataset(payload, dry_run=False):
         except IntegrityError:
             db.session.rollback()
             raise ImportConflict('Конфликт параллельного импорта. Данные не перезаписаны; повторите команду.') from None
-    return {'dataset_group_id': GROUP, 'received': len(items), 'imported': 0 if dry_run else len(pending),
+    return {'dataset_group_id': group_id, 'received': len(items), 'imported': 0 if dry_run else len(pending),
             'pending': len(pending) if dry_run else 0, 'skipped': skipped, 'dry_run': dry_run}

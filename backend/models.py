@@ -80,6 +80,7 @@ class Evaluation(db.Model):
     conversation_id = db.Column(db.String(36), db.ForeignKey('conversations.id'), nullable=False, index=True)
     checklist_id = db.Column(db.String(36), db.ForeignKey('checklists.id'), nullable=False)
     engine = db.Column(db.String(80), nullable=False)
+    run_metadata = db.Column(db.JSON, nullable=True)
     original_results = db.Column(db.JSON, nullable=False)
     results = db.Column(db.JSON, nullable=False)
     revision = db.Column(db.Integer, nullable=False, default=1)
@@ -87,10 +88,13 @@ class Evaluation(db.Model):
     __mapper_args__ = {'version_id_col': revision}
 
     def to_dict(self):
-        from services.evaluation import summarize
+        from services.evaluation import summarize, present_results
         return {**{k: getattr(self, k) for k in (
             'id', 'conversation_id', 'checklist_id', 'engine', 'original_results', 'results', 'revision')},
-            'created_at': iso(self.created_at), **summarize(self.results)}
+            'created_at': iso(self.created_at), 'results': present_results(self.results),
+            'run_metadata': self.run_metadata,
+            'original_results': present_results(self.original_results),
+            'original_summary': summarize(self.original_results), **summarize(self.results)}
 
 
 class Review(db.Model):
@@ -108,3 +112,27 @@ class Review(db.Model):
         return {**{k: getattr(self, k) for k in (
             'id', 'evaluation_id', 'revision', 'reviewer', 'comment', 'changes')},
             'created_at': iso(self.created_at)}
+
+
+class Appeal(db.Model):
+    __tablename__ = 'appeals'
+    id = db.Column(db.String(36), primary_key=True, default=uid)
+    evaluation_id = db.Column(db.String(36), db.ForeignKey('evaluations.id'), nullable=False, index=True)
+    criterion_id = db.Column(db.String(80), nullable=False)
+    evaluation_revision = db.Column(db.Integer, nullable=False)
+    author = db.Column(db.String(120), nullable=False)
+    comment = db.Column(db.Text, nullable=False)
+    disputed_result = db.Column(db.JSON, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='open')
+    decision = db.Column(db.String(20))
+    review_id = db.Column(db.String(36), db.ForeignKey('reviews.id'), unique=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=now, nullable=False)
+    resolved_at = db.Column(db.DateTime(timezone=True))
+    revision = db.Column(db.Integer, nullable=False, default=1)
+    __mapper_args__ = {'version_id_col': revision}
+    __table_args__ = (db.CheckConstraint("status IN ('open','resolved')", name='appeal_status'),)
+
+    def to_dict(self):
+        return {**{k: getattr(self, k) for k in ('id', 'evaluation_id', 'criterion_id', 'evaluation_revision',
+                'author', 'comment', 'disputed_result', 'status', 'decision', 'review_id', 'revision')},
+                'created_at': iso(self.created_at), 'resolved_at': iso(self.resolved_at) if self.resolved_at else None}

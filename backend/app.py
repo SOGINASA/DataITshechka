@@ -16,7 +16,7 @@ from werkzeug.exceptions import HTTPException
 load_dotenv(Path(__file__).with_name('.env'))
 
 from config import get_config
-from models import db, Conversation, Checklist
+from models import db, Conversation, Checklist, Evaluation, Appeal
 from services.validation import ValidationError
 
 migrate = Migrate()
@@ -38,12 +38,25 @@ def create_app(config_object=None):
     migrate.init_app(app, db, directory=str(ROOT / 'migrations'))
     from routes import cqa_bp
     app.register_blueprint(cqa_bp, url_prefix='/api')
+    from services.ollama import AssessmentError
+    from services.freedom import IntegrationError, ImportConflict
+
+    @app.errorhandler(IntegrationError)
+    def integration_error(error):
+        return jsonify({'error': {'code': 'import_conflict' if isinstance(error, ImportConflict) else 'dataset_error',
+                                 'message': str(error)}}), 409 if isinstance(error, ImportConflict) else 502
+
+    @app.errorhandler(AssessmentError)
+    def assessment_error(error):
+        return jsonify({'error': {'code': 'assessment_unavailable' if error.status == 503 else 'invalid_assessment',
+                                 'message': str(error)}}), error.status
 
     @app.get('/api')
     def api_info():
-        return jsonify({'name': 'CQA — анализ качества диалогов', 'version': '1.0.0',
+        return jsonify({'name': 'CQA — анализ качества диалогов', 'version': '1.1.0',
                         'authentication': 'none', 'languages': ['ru', 'kk', 'en'],
                         'evaluation_engine': 'keyword-baseline-v1',
+                        'evaluation_engines': ['baseline', 'ollama'], 'ollama_configured': bool(app.config['OLLAMA_MODEL']),
                         'openapi': '/api/openapi.json'})
 
     @app.get('/api/health')
@@ -54,6 +67,8 @@ def create_app(config_object=None):
     def readiness():
         try:
             db.session.execute(select(Conversation.id).limit(1))
+            db.session.execute(select(Evaluation.run_metadata).limit(1))
+            db.session.execute(select(Appeal.id).limit(1))
         except SQLAlchemyError:
             db.session.rollback()
             return jsonify({'status': 'database_unavailable_or_uninitialized'}), 503
@@ -123,11 +138,26 @@ def create_app(config_object=None):
         db.session.commit()
         click.echo('Демонстрационные данные загружены. Это не данные и не чек-лист организаторов.')
 
+    @app.cli.command('seed-checklist')
+    def seed_checklist():
+        """Load the official initial rubric without overwriting existing versions."""
+        from services.validation import checklist
+        data = checklist(json.loads((ROOT / 'checklists' / 'freedom_chat_v1.json').read_text(encoding='utf-8')))
+        existing = db.session.scalar(select(Checklist).where(Checklist.name == data['name'], Checklist.version == data['version']))
+        if existing:
+            if existing.criteria != data['criteria']:
+                raise click.ClickException('Эта версия уже существует с другими критериями; используйте новую версию.')
+        else:
+            db.session.add(Checklist(**data))
+            db.session.commit()
+        click.echo('Официальный чек-лист доступен: 8 критериев, сумма весов 100.')
+
     @app.cli.command('import-dev')
+    @click.option('--group', 'group_id', default='DEV', show_default=True, help='Dataset group supplied by the organizers.')
     @click.option('--dry-run', is_flag=True, help='Validate and compare without saving records.')
     @click.option('--file', 'source_file', type=click.Path(exists=True, dir_okay=False, path_type=Path),
                   help='Read a saved DEV response instead of calling the API.')
-    def import_dev(dry_run, source_file):
+    def import_dev(dry_run, source_file, group_id):
         """Import Freedom DEV data. Repeated identical imports skip existing dialogues."""
         from services.freedom import (IntegrationError, MAX_RESPONSE_BYTES, decode_payload,
                                      fetch_dataset, import_dataset)
@@ -136,8 +166,8 @@ def create_app(config_object=None):
                 with source_file.open('rb') as stream:
                     payload = decode_payload(stream.read(MAX_RESPONSE_BYTES + 1))
             else:
-                payload = fetch_dataset(app.config['FREEDOM_API_URL'])
-            result = import_dataset(payload, dry_run=dry_run)
+                payload = fetch_dataset(app.config['FREEDOM_API_URL'], group_id=group_id)
+            result = import_dataset(payload, dry_run=dry_run, group_id=group_id)
         except IntegrationError as exc:
             db.session.rollback()
             raise click.ClickException(str(exc)) from None
@@ -148,6 +178,8 @@ def create_app(config_object=None):
             db.session.rollback()
             raise click.ClickException('База данных недоступна. Проверьте настройки и выполните flask db upgrade.') from None
         click.echo(json.dumps(result, ensure_ascii=False))
+
+    app.cli.add_command(import_dev, name='import-dataset')
 
     return app
 
