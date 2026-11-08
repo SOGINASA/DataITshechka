@@ -1,25 +1,18 @@
-# Локальная модель и первый измеримый прогон
+# Локальная модель Qwen 8B
 
-Для RTX 4050 Laptop с 6 ГБ VRAM подготовлена стартовая конфигурация `qwen3:4b`.
-Это baseline для измерения качества RU/KZ/EN. Дообучение и дополнительная синтетика
-до анализа ошибок не нужны. Модель занимает около 2,5 ГБ; большой контекст требует
-дополнительной памяти. Локальный профиль использует Flash Attention и кэш q8_0;
-контекст 24K использован в первом контрольном прогоне. Полный DEV-прогон выявил,
-что после расширения промпта `p1-ru-010` превышает консервативный лимит и получает
-422 до обращения к модели. Для него нужен больший контекст, например 28672,
-с отдельной проверкой памяти и времени. Часть слоёв всё ещё может перейти на CPU.
-С кэшем f16 и контекстом 32K первый диалог занял 175 секунд;
-профиль q8_0/24K заметно сократил это время. Точные результаты — в отчёте прогона.
+Для локального ML-запуска используется `qwen3:8b` через Ollama. Требования к памяти
+зависят от квантования и размера контекста; для длинных звонков может понадобиться
+увеличить контекст и проверить доступные RAM/VRAM.
 
 ## Установка и запуск
 
 Все команды ниже выполняются в PowerShell из корня репозитория.
 
 ```powershell
-# Первый запуск: официальный portable Ollama и модель.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\local_model.ps1 -Action setup
+# Первый запуск: официальный portable Ollama и Qwen 8B.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\local_model.ps1 -Action setup -Model qwen3:8b
 # При следующих запусках:
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\local_model.ps1 -Action start
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\local_model.ps1 -Action start -Model qwen3:8b
 ```
 
 Runtime закреплён на `v0.40.15`, SHA256 архива проверяется по опубликованному
@@ -32,7 +25,7 @@ API слушает только `127.0.0.1:11434`. Внешний платный
 
 ```dotenv
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=qwen3:4b
+OLLAMA_MODEL=qwen3:8b
 OLLAMA_TIMEOUT=300
 OLLAMA_NUM_CTX=24576
 OLLAMA_NUM_PREDICT=4096
@@ -87,11 +80,11 @@ cd backend
 # Чек-листы из снимка плюс новая голосовая политика в локальную БД.
 .\.venv\Scripts\python.exe -m ml.seed --additional-rubric ../annotation/checklist.voice.v2.json
 # Первые 10 чатов, распределённые между EN/KZ/RU без подбора по ответам.
-.\.venv\Scripts\python.exe -m ml.run --limit 10 --run-dir ../data/runs/qwen3-4b-control-v1
+.\.venv\Scripts\python.exe -m ml.run --limit 10 --run-dir ../data/runs/qwen3-8b-control-v1
 # Затем все 65 в отдельном эксперименте.
-.\.venv\Scripts\python.exe -m ml.run --run-dir ../data/runs/qwen3-4b-dev-v1
+.\.venv\Scripts\python.exe -m ml.run --run-dir ../data/runs/qwen3-8b-dev-v1
 # Продолжение прерванного запуска с неизменными настройками.
-.\.venv\Scripts\python.exe -m ml.run --limit 10 --run-dir ../data/runs/qwen3-4b-control-v1 --resume
+.\.venv\Scripts\python.exe -m ml.run --limit 10 --run-dir ../data/runs/qwen3-8b-control-v1 --resume
 ```
 
 Для конкретных разговоров используйте `--ids p1-en-001,p1-kz-001,p1-ru-001`.
@@ -127,9 +120,6 @@ cd backend
 модели не сохраняются. JSON schema связывает каждый ID с его типом, статусом и
 допустимыми значениями; проверка на сервере остаётся обязательной.
 
-Реальный первый результат: [ML_BASELINE_RESULTS_RU.md](ML_BASELINE_RESULTS_RU.md).
-Технически завершены 10/10 чатов; точность 55/80, проблема N/A остаётся открытой.
-
 Все 65 относятся к **development**, независимого test пока нет. Это проверенная
 пользователем исходная AI-разметка; повторную независимую экспертизу она не заменяет.
 Результаты звонков, эталоны которых проверялись с аудио, выделяются отдельно:
@@ -162,6 +152,6 @@ cd backend
 голосовых экспериментов; десять контрольных чатов этим изменением не затронуты.
 
 Официальные источники: [Ollama для Windows](https://docs.ollama.com/windows),
-[Qwen3 4B](https://ollama.com/library/qwen3:4b),
+[Qwen3 8B](https://ollama.com/library/qwen3:8b),
 [structured outputs](https://docs.ollama.com/capabilities/structured-outputs),
 [параметр thinking](https://docs.ollama.com/capabilities/thinking).

@@ -1,6 +1,6 @@
 param(
     [ValidateSet('setup', 'start', 'restart', 'status', 'stop')][string]$Action = 'status',
-    [string]$Model = 'qwen3:4b',
+    [string]$Model = 'qwen3:8b',
     [ValidateSet('f16', 'q8_0', 'q4_0')][string]$CacheType = 'q8_0'
 )
 $ErrorActionPreference = 'Stop'
