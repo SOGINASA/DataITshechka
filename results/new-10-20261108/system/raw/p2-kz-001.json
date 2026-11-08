@@ -1,0 +1,22 @@
+{
+  "conversation": {
+    "channel": "chat",
+    "created_at": "2026-11-08T06:11:25.520957Z",
+    "external_id": "p2-kz-001",
+    "id": "4be0e5b0-5ff7-4d55-a1a4-a7b2c4886080",
+    "language": "kk",
+    "message_count": 15,
+    "operator_name": "Оператор",
+    "recording_url": null,
+    "title": "Загруженный диалог"
+  },
+  "evaluations_response": {
+    "items": [],
+    "pagination": {
+      "page": 1,
+      "pages": 0,
+      "per_page": 100,
+      "total": 0
+    }
+  }
+}

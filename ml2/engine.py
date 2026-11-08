@@ -6,10 +6,10 @@ from .contracts import (ContractError, canonical, digest, loads, rubric, convers
 from .knowledge import KnowledgeBase
 from .provider import ModelError
 from .scoring import summarize
-from .decoding import schema_for, decode
+from .decoding import schema_for, decode, _reviewed_range
 
 SYSTEM = (Path(__file__).parent / 'prompts/system.txt').read_text()
-PROMPT_VERSION = 'ml2-cqa-9'
+PROMPT_VERSION = 'ml2-cqa-10'
 
 
 class EvaluationFailure(RuntimeError):
@@ -32,9 +32,10 @@ class Evaluator:
         excerpts = self.knowledge.retrieve(dialog, self.as_of)
         schema = schema_for(self.checklist, dialog, excerpts)
         prompt_fields = ('id', 'title', 'description', 'answer_type', 'allow_na',
-                         'na_condition', 'scale', 'review_guide')
+                         'na_condition', 'scale', 'review_guide', 'review_scope')
         prompt_rubric = {'criteria': [
-            {k: c[k] for k in prompt_fields if k in c}
+            {**{k: c[k] for k in prompt_fields if k in c},
+             'reviewed_range': _reviewed_range(dialog, c)}
             for c in self.checklist['criteria']]}
         task = {'rubric': prompt_rubric, 'conversation': dialog,
                 'knowledge_excerpts': excerpts, 'knowledge_as_of': self.as_of}

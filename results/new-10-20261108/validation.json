@@ -1,0 +1,12 @@
+{
+  "schema": "1.0",
+  "split": "prod",
+  "variant_1_valid": true,
+  "variant_2_valid": true,
+  "source_count": 10,
+  "system_saved": 4,
+  "system_complete": 3,
+  "system_unresolved": 1,
+  "system_missing": 6,
+  "new_inference_calls": 0
+}

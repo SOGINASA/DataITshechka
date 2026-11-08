@@ -1,0 +1,44 @@
+{
+  "checks": [
+    "65 unique original IDs",
+    "60 chats + 5 calls",
+    "8 criteria per successful row",
+    "types, allowed scales and nullability",
+    "evidence indices within original transcripts",
+    "independent Decimal score calculation",
+    "critical flags consistent",
+    "Source of every artifact explicitly distinguished: assistant versus deployed Qwen"
+  ],
+  "artifacts": {
+    "assistant": {
+      "path": "results/assistant-review/dev/results.json",
+      "sha256": "26f1bd1bdffd30ec499c8de67e66c32481e52e81b0b9ffa03129b6fe7736c24e",
+      "records": 65,
+      "status_counts": {
+        "ok": 65
+      },
+      "criteria_count": 520,
+      "critical_ids": [
+        "p1-ru-009",
+        "p1-ru-022",
+        "p1-ru-023",
+        "p1-ru-029",
+        "p1-kz-013",
+        "p1-kz-015",
+        "p1-en-013",
+        "p1-en-014"
+      ]
+    },
+    "deployed_qwen": {
+      "path": "results/dev/results.json",
+      "sha256": "652b1ffd7bcb10ffd90d02133417b1f56bd1ec9528fc06e45238253e37894dab",
+      "records": 65,
+      "status_counts": {
+        "ok": 65,
+        "error": 0
+      },
+      "criteria_count": 24,
+      "critical_ids": []
+    }
+  }
+}

@@ -1,0 +1,746 @@
+{
+  "conversation": {
+    "channel": "chat",
+    "created_at": "2026-11-08T06:11:25.520998Z",
+    "external_id": "p2-en-001",
+    "id": "0994fe48-1f1e-4dac-8916-eadc9d68863c",
+    "language": "en",
+    "message_count": 16,
+    "operator_name": "Оператор",
+    "recording_url": null,
+    "title": "Загруженный диалог"
+  },
+  "evaluations_response": {
+    "items": [
+      {
+        "applicable_weight": 65.0,
+        "checklist_id": "27c7918b-3cd2-459c-b3fc-0aca981d5306",
+        "conversation_id": "0994fe48-1f1e-4dac-8916-eadc9d68863c",
+        "counts": {
+          "fail": 0,
+          "needs_review": 0,
+          "not_applicable": 2,
+          "pass": 4,
+          "scored": 2
+        },
+        "coverage": 100.0,
+        "created_at": "2026-11-08T06:15:48.670204Z",
+        "critical_failures": [],
+        "engine": "ollama:qwen3:8b",
+        "final_score": 92.31,
+        "gross_error_detected": false,
+        "id": "77e6131a-0621-4f63-8d27-c47a63e8a409",
+        "needs_review": true,
+        "original_results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": 15.38,
+            "effective_weight": 15.38,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Nora. Which site are you on right now?",
+                "start_ms": 142000
+              }
+            ],
+            "explanation": "Оператор поздоровался и представился в первом ответе.",
+            "na_condition": "",
+            "points": 10.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Установление контакта",
+            "value": true,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Данных для ответа хватало с самого начала.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Выявление потребности",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Запрос не требовал идентификации.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 30.77,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "15",
+                "quote": "That worked. Thanks.",
+                "start_ms": 277000
+              }
+            ],
+            "explanation": "Основной вопрос решён, пропущена второстепенная деталь.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "scored",
+            "title": "Корректная и полная консультация",
+            "value": 15,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 23.08,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Оператор вежлив и отреагировал на конкретную проблему.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 23.08,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Nora. Which site are you on right now?",
+                "start_ms": 142000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "scored",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": 10,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": 7.69,
+            "effective_weight": 7.69,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Оператор подвёл итог и попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": 5.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Завершение",
+            "value": true,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": 0.0,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Нет оскорблений, предложений платных услуг или раскрытия конфиденциальной информации.",
+            "na_condition": "",
+            "points": 0.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "pass",
+            "title": "Грубые ошибки",
+            "value": false,
+            "weight": 0
+          }
+        ],
+        "original_summary": {
+          "applicable_weight": 65.0,
+          "counts": {
+            "fail": 0,
+            "needs_review": 0,
+            "not_applicable": 2,
+            "pass": 4,
+            "scored": 2
+          },
+          "coverage": 100.0,
+          "critical_failures": [],
+          "final_score": 92.31,
+          "gross_error_detected": false,
+          "needs_review": true,
+          "score": 92.31,
+          "score_is_partial": false,
+          "sections": [
+            {
+              "applicable_weight": 10.0,
+              "coverage": 100.0,
+              "final_score": 100.0,
+              "name": "Начало и понимание запроса",
+              "score": 100.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 20.0,
+              "coverage": 100.0,
+              "final_score": 75.0,
+              "name": "Безопасность и решение",
+              "score": 75.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 35.0,
+              "coverage": 100.0,
+              "final_score": 100.0,
+              "name": "Ведение и завершение диалога",
+              "score": 100.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 0.0,
+              "coverage": null,
+              "final_score": null,
+              "name": "Грубые нарушения",
+              "score": null,
+              "score_is_partial": false
+            }
+          ]
+        },
+        "results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": 15.38,
+            "effective_weight": 15.38,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Nora. Which site are you on right now?",
+                "start_ms": 142000
+              }
+            ],
+            "explanation": "Оператор поздоровался и представился в первом ответе.",
+            "na_condition": "",
+            "points": 10.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Установление контакта",
+            "value": true,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Данных для ответа хватало с самого начала.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Выявление потребности",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Запрос не требовал идентификации.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 30.77,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "15",
+                "quote": "That worked. Thanks.",
+                "start_ms": 277000
+              }
+            ],
+            "explanation": "Основной вопрос решён, пропущена второстепенная деталь.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "scored",
+            "title": "Корректная и полная консультация",
+            "value": 15,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 23.08,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Оператор вежлив и отреагировал на конкретную проблему.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": 23.08,
+            "effective_weight": 23.08,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Nora. Which site are you on right now?",
+                "start_ms": 142000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Sorry, let me be specific. The company site is informational. Open tradernet.global to sign in on the web, or use the Freedom Broker app.",
+                "start_ms": 251000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "scored",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": 10,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": 7.69,
+            "effective_weight": 7.69,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "16",
+                "quote": "Glad you got in. Have a good day!",
+                "start_ms": 316000
+              }
+            ],
+            "explanation": "Оператор подвёл итог и попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": 5.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Завершение",
+            "value": true,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": 0.0,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Нет оскорблений, предложений платных услуг или раскрытия конфиденциальной информации.",
+            "na_condition": "",
+            "points": 0.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "16",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "pass",
+            "title": "Грубые ошибки",
+            "value": false,
+            "weight": 0
+          }
+        ],
+        "revision": 1,
+        "run_metadata": {
+          "calls": 1,
+          "elapsed_seconds": 152.755,
+          "eval_count": 655,
+          "model": "qwen3:8b",
+          "num_ctx": 32768,
+          "num_predict": 2048,
+          "prompt_eval_count": 2900,
+          "prompt_version": "cqa-rubric-v3",
+          "think": false,
+          "thinking_returned": false,
+          "total_duration": 152404682875,
+          "wire_format": "legacy",
+          "wire_version": "cqa-rubric-v3"
+        },
+        "score": 92.31,
+        "score_is_partial": false,
+        "sections": [
+          {
+            "applicable_weight": 10.0,
+            "coverage": 100.0,
+            "final_score": 100.0,
+            "name": "Начало и понимание запроса",
+            "score": 100.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 20.0,
+            "coverage": 100.0,
+            "final_score": 75.0,
+            "name": "Безопасность и решение",
+            "score": 75.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 35.0,
+            "coverage": 100.0,
+            "final_score": 100.0,
+            "name": "Ведение и завершение диалога",
+            "score": 100.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 0.0,
+            "coverage": null,
+            "final_score": null,
+            "name": "Грубые нарушения",
+            "score": null,
+            "score_is_partial": false
+          }
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pages": 1,
+      "per_page": 100,
+      "total": 1
+    }
+  }
+}

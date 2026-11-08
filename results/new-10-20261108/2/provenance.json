@@ -1,0 +1,179 @@
+{
+  "artifact_type": "saved_system_outputs",
+  "is_deployed_system_output": true,
+  "created_at": "2026-11-08T06:54:21.917641+00:00",
+  "source_sha256": "55b7642759301d04910f868b66a99d7c59791737e1101c8adcb142e1ad11b171",
+  "count": 10,
+  "saved_evaluations": 4,
+  "complete_evaluations": 3,
+  "notes": [
+    "Assistant judgments are not official ground truth or a prediction of Qwen.",
+    "External brokerage facts were not independently verified.",
+    "N/A is excluded from scoring; unknown system outcomes are error rows, never fabricated N/A.",
+    "Evidence turns are 1-based including client, bot and system messages."
+  ],
+  "runs": [
+    {
+      "id": "9ff7ded5-f321-476d-b530-2320bc2b36a4",
+      "conversation_id": "d361cb94-3083-4e69-9498-ac379e670baa",
+      "engine": "ml2:qwen3:8b",
+      "created_at": "2026-11-08T06:44:29.247696Z",
+      "revision": 1,
+      "run_metadata": {
+        "adapter_version": "ml2-api-1-range-fix",
+        "attempts": [
+          {
+            "attempt": 1,
+            "usage": {
+              "eval_count": 581,
+              "load_duration": 186263792,
+              "prompt_eval_count": 2684,
+              "total_duration": 148043105250
+            }
+          }
+        ],
+        "audio_features_available": false,
+        "calls": 1,
+        "conversation_hash": "86aa398d9d4a5cb99861c8c9fadb9cd18f30c748966aac5248319fdf75246688",
+        "criterion_diagnostics": {
+          "closing": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "consultation": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "contact": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "dialogue_management": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "empathy": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "gross_errors": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "identification": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          },
+          "needs": {
+            "knowledge_refs": [],
+            "knowledge_status": "not_needed"
+          }
+        },
+        "elapsed_seconds": 148.291,
+        "eval_count": 581,
+        "evaluator": "ml2",
+        "input_basis": "transcript",
+        "knowledge_as_of": null,
+        "knowledge_hash": "3359e0c8b151e6f5259af2c7c90ef1db6fd7f18aa32536bdabd874b3e5d423e7",
+        "knowledge_version": "none",
+        "model": "qwen3:8b",
+        "model_digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+        "num_ctx": 32768,
+        "num_predict": 2048,
+        "original_rubric_hash": "45b3ff5e13e353b947c9ad13200617a527484e811fd650591f7ea84ced0f8432",
+        "prompt_eval_count": 2684,
+        "prompt_hash": "3f83c700b9076c12ea3479bfbeb77b8b0b749bdc5fcf4027bfb815dafb33b438",
+        "prompt_version": "ml2-cqa-10",
+        "retrieved_ids": [],
+        "rubric_hash": "6a44cc52448d09d7df9230306a68b7b4746189ff2384eb31ab7501f3a2ca6ec9",
+        "rubric_version": "official-1",
+        "runtime_hotfix": {
+          "adapter_sha256": "802095923ea8371a795bcbcbe977c98b0200b4167ce04a703aa0856d14c832fd",
+          "base_source_revision": "5f44543894192f2e38f0b7014073cc4a308771ae",
+          "base_source_tree": "d4b04897d5a1ddb000ff3435bf40cf311c5d4692",
+          "description": "Criterion ranges in prompt and evidence enums; adapter preserves enums.",
+          "id": "20261108-evidence-ranges"
+        },
+        "sampling": {
+          "min_p": 0.0,
+          "seed": 7,
+          "temperature": 0.0,
+          "top_k": 20,
+          "top_p": 0.95
+        },
+        "server_version": "0.32.14",
+        "source_revision": "5f44543894192f2e38f0b7014073cc4a308771ae",
+        "source_tree": "d4b04897d5a1ddb000ff3435bf40cf311c5d4692",
+        "think": false,
+        "total_duration": 148043105250,
+        "wire_schema_hash": "ab69398c4e965f07efdbd51d5eb902096f2c6720a1efa6827e76664698e24c38"
+      }
+    },
+    {
+      "id": "9037e027-b38e-419c-b526-727db3d12738",
+      "conversation_id": "d093181e-c74a-403d-90b6-8708c053f53d",
+      "engine": "ollama:qwen3:8b",
+      "created_at": "2026-11-08T06:18:13.912746Z",
+      "revision": 1,
+      "run_metadata": {
+        "calls": 1,
+        "elapsed_seconds": 124.002,
+        "eval_count": 623,
+        "model": "qwen3:8b",
+        "num_ctx": 32768,
+        "num_predict": 2048,
+        "prompt_eval_count": 2967,
+        "prompt_version": "cqa-rubric-v3",
+        "think": false,
+        "thinking_returned": false,
+        "total_duration": 123631025708,
+        "wire_format": "legacy",
+        "wire_version": "cqa-rubric-v3"
+      }
+    },
+    {
+      "id": "77e6131a-0621-4f63-8d27-c47a63e8a409",
+      "conversation_id": "0994fe48-1f1e-4dac-8916-eadc9d68863c",
+      "engine": "ollama:qwen3:8b",
+      "created_at": "2026-11-08T06:15:48.670204Z",
+      "revision": 1,
+      "run_metadata": {
+        "calls": 1,
+        "elapsed_seconds": 152.755,
+        "eval_count": 655,
+        "model": "qwen3:8b",
+        "num_ctx": 32768,
+        "num_predict": 2048,
+        "prompt_eval_count": 2900,
+        "prompt_version": "cqa-rubric-v3",
+        "think": false,
+        "thinking_returned": false,
+        "total_duration": 152404682875,
+        "wire_format": "legacy",
+        "wire_version": "cqa-rubric-v3"
+      }
+    },
+    {
+      "id": "1302676e-1362-4c3d-aa8b-74fe130f8e55",
+      "conversation_id": "d32ed9dd-2ff0-463b-bf92-434e3cb7b7e3",
+      "engine": "ollama:qwen3:8b",
+      "created_at": "2026-11-08T06:12:45.226973Z",
+      "revision": 1,
+      "run_metadata": {
+        "calls": 1,
+        "elapsed_seconds": 72.049,
+        "eval_count": 735,
+        "model": "qwen3:8b",
+        "num_ctx": 32768,
+        "num_predict": 2048,
+        "prompt_eval_count": 3262,
+        "prompt_version": "cqa-rubric-v3",
+        "think": false,
+        "thinking_returned": false,
+        "total_duration": 71702230625,
+        "wire_format": "legacy",
+        "wire_version": "cqa-rubric-v3"
+      }
+    }
+  ]
+}

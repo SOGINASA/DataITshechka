@@ -1,0 +1,972 @@
+{
+  "conversation": {
+    "channel": "chat",
+    "created_at": "2026-11-08T06:11:25.521006Z",
+    "external_id": "p2-en-002",
+    "id": "d32ed9dd-2ff0-463b-bf92-434e3cb7b7e3",
+    "language": "en",
+    "message_count": 21,
+    "operator_name": "Оператор",
+    "recording_url": null,
+    "title": "Загруженный диалог"
+  },
+  "evaluations_response": {
+    "items": [
+      {
+        "applicable_weight": 80.0,
+        "checklist_id": "27c7918b-3cd2-459c-b3fc-0aca981d5306",
+        "conversation_id": "d32ed9dd-2ff0-463b-bf92-434e3cb7b7e3",
+        "counts": {
+          "fail": 0,
+          "needs_review": 0,
+          "not_applicable": 1,
+          "pass": 5,
+          "scored": 2
+        },
+        "coverage": 100.0,
+        "created_at": "2026-11-08T06:12:45.226973Z",
+        "critical_failures": [],
+        "engine": "ollama:qwen3:8b",
+        "final_score": 100.0,
+        "gross_error_detected": false,
+        "id": "1302676e-1362-4c3d-aa8b-74fe130f8e55",
+        "needs_review": true,
+        "original_results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": 12.5,
+            "effective_weight": 12.5,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              }
+            ],
+            "explanation": "Оператор поздоровался и представился в первом ответе.",
+            "na_condition": "",
+            "points": 10.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Установление контакта",
+            "value": true,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              }
+            ],
+            "explanation": "Оператор учёл известные детали и уточнил недостающее до ответа.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Выявление потребности",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Запрос не требовал идентификации.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": 25.0,
+            "effective_weight": 25.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": 20.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "scored",
+            "title": "Корректная и полная консультация",
+            "value": 20,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Оператор вежлив и отреагировал на конкретную проблему.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "scored",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": 10,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": 6.25,
+            "effective_weight": 6.25,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Оператор подвёл итог или предложил дальнейшую помощь и попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": 5.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Завершение",
+            "value": true,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": 0.0,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Нет оскорблений, предложений платных услуг или раскрытия конфиденциальной информации.",
+            "na_condition": "",
+            "points": 0.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "pass",
+            "title": "Грубые ошибки",
+            "value": false,
+            "weight": 0
+          }
+        ],
+        "original_summary": {
+          "applicable_weight": 80.0,
+          "counts": {
+            "fail": 0,
+            "needs_review": 0,
+            "not_applicable": 1,
+            "pass": 5,
+            "scored": 2
+          },
+          "coverage": 100.0,
+          "critical_failures": [],
+          "final_score": 100.0,
+          "gross_error_detected": false,
+          "needs_review": true,
+          "score": 100.0,
+          "score_is_partial": false,
+          "sections": [
+            {
+              "applicable_weight": 25.0,
+              "coverage": 100.0,
+              "final_score": 100.0,
+              "name": "Начало и понимание запроса",
+              "score": 100.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 20.0,
+              "coverage": 100.0,
+              "final_score": 100.0,
+              "name": "Безопасность и решение",
+              "score": 100.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 35.0,
+              "coverage": 100.0,
+              "final_score": 100.0,
+              "name": "Ведение и завершение диалога",
+              "score": 100.0,
+              "score_is_partial": false
+            },
+            {
+              "applicable_weight": 0.0,
+              "coverage": null,
+              "final_score": null,
+              "name": "Грубые нарушения",
+              "score": null,
+              "score_is_partial": false
+            }
+          ]
+        },
+        "results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": 12.5,
+            "effective_weight": 12.5,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              }
+            ],
+            "explanation": "Оператор поздоровался и представился в первом ответе.",
+            "na_condition": "",
+            "points": 10.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Установление контакта",
+            "value": true,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              }
+            ],
+            "explanation": "Оператор учёл известные детали и уточнил недостающее до ответа.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "pass",
+            "title": "Выявление потребности",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 0,
+            "evidence": [],
+            "explanation": "Запрос не требовал идентификации.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "not_applicable",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": 25.0,
+            "effective_weight": 25.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": 20.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "scored",
+            "title": "Корректная и полная консультация",
+            "value": 20,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Оператор вежлив и отреагировал на конкретную проблему.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": true,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": 18.75,
+            "effective_weight": 18.75,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Hi, I'm Jordan. In the app, open Menu, then Reports and Documents, then Broker Report. Select last year's dates and download the report.",
+                "start_ms": 154000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "Look in Account Information on the first page. That's where the pricing plan is listed.",
+                "start_ms": 227000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "Yes. In the web version, open the account area, labelled «Кабинет» in the Russian interface. The current plan is under your name.",
+                "start_ms": 262000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "17",
+                "quote": "Check the document title. If it says Broker Report, you're in the right document. The plan is in Account Information on page one.",
+                "start_ms": 375000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "19",
+                "quote": "Use the one for the dates you selected for last year. You can go back to Broker Report and generate it again if you're unsure which file you opened.",
+                "start_ms": 417000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+            "na_condition": "",
+            "points": 15.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "scored",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": 10,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": 6.25,
+            "effective_weight": 6.25,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "21",
+                "quote": "You're welcome. You have the report and know where to check the current plan. Goodbye!",
+                "start_ms": 459000
+              }
+            ],
+            "explanation": "Оператор подвёл итог или предложил дальнейшую помощь и попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": 5.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "pass",
+            "title": "Завершение",
+            "value": true,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": 0.0,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Нет оскорблений, предложений платных услуг или раскрытия конфиденциальной информации.",
+            "na_condition": "",
+            "points": 0.0,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "21",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "pass",
+            "title": "Грубые ошибки",
+            "value": false,
+            "weight": 0
+          }
+        ],
+        "revision": 1,
+        "run_metadata": {
+          "calls": 1,
+          "elapsed_seconds": 72.049,
+          "eval_count": 735,
+          "model": "qwen3:8b",
+          "num_ctx": 32768,
+          "num_predict": 2048,
+          "prompt_eval_count": 3262,
+          "prompt_version": "cqa-rubric-v3",
+          "think": false,
+          "thinking_returned": false,
+          "total_duration": 71702230625,
+          "wire_format": "legacy",
+          "wire_version": "cqa-rubric-v3"
+        },
+        "score": 100.0,
+        "score_is_partial": false,
+        "sections": [
+          {
+            "applicable_weight": 25.0,
+            "coverage": 100.0,
+            "final_score": 100.0,
+            "name": "Начало и понимание запроса",
+            "score": 100.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 20.0,
+            "coverage": 100.0,
+            "final_score": 100.0,
+            "name": "Безопасность и решение",
+            "score": 100.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 35.0,
+            "coverage": 100.0,
+            "final_score": 100.0,
+            "name": "Ведение и завершение диалога",
+            "score": 100.0,
+            "score_is_partial": false
+          },
+          {
+            "applicable_weight": 0.0,
+            "coverage": null,
+            "final_score": null,
+            "name": "Грубые нарушения",
+            "score": null,
+            "score_is_partial": false
+          }
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pages": 1,
+      "per_page": 100,
+      "total": 1
+    }
+  }
+}

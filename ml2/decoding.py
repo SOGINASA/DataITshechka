@@ -20,10 +20,17 @@ def schema_for(checklist, dialog, excerpts):
     assessment = {'type': 'object', 'additionalProperties': False,
                   'required': list(properties), 'properties': properties}
     keys = [c['id'] for c in checklist['criteria']]
+    rows = {}
+    for criterion in checklist['criteria']:
+        row = deepcopy(assessment)
+        span = _reviewed_range(dialog, criterion)
+        start, end = ids.index(span['start_message_id']), ids.index(span['end_message_id'])
+        row['properties']['evidence_message_ids']['items']['enum'] = ids[start:end + 1]
+        rows[criterion['id']] = row
     return {'type': 'object', 'additionalProperties': False, 'required': ['results'],
             '$defs': {'assessment': assessment}, 'properties': {'results': {
                 'type': 'object', 'additionalProperties': False, 'required': keys,
-                'properties': {k: {'$ref': '#/$defs/assessment'} for k in keys}}}}
+                'properties': rows}}}
 
 
 def _reviewed_range(dialog, criterion):

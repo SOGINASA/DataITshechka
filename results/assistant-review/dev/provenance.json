@@ -1,0 +1,20 @@
+{
+  "artifact_type": "independent_assistant_review",
+  "is_deployed_system_output": false,
+  "is_prediction_of_qwen_outputs": false,
+  "team_name": "ITshechka",
+  "reviewed_count": 65,
+  "expected_count": 65,
+  "created_at": "2026-11-08T05:41:58.344290+00:00",
+  "source_sha256": "067378aa75d8c92c5882203a73afb192cff2f06434c3fa5026f0a0d5e7b1e60e",
+  "rubric_path": "backend/checklists/freedom_chat_v1.json",
+  "rubric_sha256": "4eed7df678e591c33b97948a245733a7801a2053b66fbf0577731dfe6bec9f7b",
+  "method": "Assistant read transcripts and authored criterion judgments and evidence positions. Python only serializes annotations, calculates scores and validates schema. No deployed model inference for these rows.",
+  "limitations": [
+    "Independent subjective review, not an accuracy measurement or trained-model benchmark.",
+    "Assessment uses supplied transcript and checklist; external brokerage product facts were not independently verified.",
+    "No audio was listened to; calls judged solely by supplied transcript.",
+    "Closing interpreted literally: summary or offer of further help, plus goodbye. A goodbye alone is insufficient.",
+    "Evidence positions are 1-based over the full original transcript, including bot and system messages."
+  ]
+}

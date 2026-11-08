@@ -1,0 +1,16 @@
+{
+  "artifact_type": "independent_assistant_review",
+  "is_deployed_system_output": false,
+  "created_at": "2026-11-08T06:54:21.916985+00:00",
+  "source_sha256": "55b7642759301d04910f868b66a99d7c59791737e1101c8adcb142e1ad11b171",
+  "count": 10,
+  "saved_evaluations": null,
+  "complete_evaluations": 10,
+  "notes": [
+    "Assistant judgments are not official ground truth or a prediction of Qwen.",
+    "External brokerage facts were not independently verified.",
+    "N/A is excluded from scoring; unknown system outcomes are error rows, never fabricated N/A.",
+    "Evidence turns are 1-based including client, bot and system messages."
+  ],
+  "runs": []
+}

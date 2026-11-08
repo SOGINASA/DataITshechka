@@ -1,0 +1,220 @@
+[
+  {
+    "conversation_id": "p2-ru-001",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 92.31,
+      "critical_flag": false
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-ru-002",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 47.69,
+      "critical_flag": false
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-ru-003",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 95.5,
+      "critical_flag": false
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-ru-004",
+    "system_status": "needs_review",
+    "system_evaluation_id": "9ff7ded5-f321-476d-b530-2320bc2b36a4",
+    "system_engine": "ml2:qwen3:8b",
+    "system_score": null,
+    "assistant_score": {
+      "final_score": 11.0,
+      "critical_flag": true
+    },
+    "differences": [
+      {
+        "criterion_id": "contact",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": false,
+        "system_rationale": "Оператор не поздоровался в первом ответе, а начал с ответа на запрос клиента.",
+        "assistant_rationale": "Первый ответ не содержит приветствия и представления."
+      },
+      {
+        "criterion_id": "discovery",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": false,
+        "system_rationale": "Оператор не уточнял недостающие детали, а сразу предоставил информацию.",
+        "assistant_rationale": "Причины и детали отказа не уточнены до утверждения об ограничении."
+      },
+      {
+        "criterion_id": "identification",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": false,
+        "system_rationale": "Проверка личности не подтверждалась до раскрытия данных.",
+        "assistant_rationale": "Сведения об ограничении конкретного счёта раскрыты без подтверждённой идентификации."
+      },
+      {
+        "criterion_id": "consultation",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": 5,
+        "system_rationale": "Ответ не был полным и не содержал официального источника информации.",
+        "assistant_rationale": "Есть лишь общая отсылка к выводу; причины и способ устранения не объяснены."
+      },
+      {
+        "criterion_id": "empathy",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": false,
+        "system_rationale": "Оператор не отреагировал на выражение недовольства клиента.",
+        "assistant_rationale": "Неудобство клиента и вопросы о проверке личности не получают содержательной реакции."
+      },
+      {
+        "criterion_id": "dialogue",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": 4,
+        "system_rationale": "Ответы были неясными и несвязными, не было предупреждения об ожидании.",
+        "assistant_rationale": "Неопределённые формулировки вынуждают клиента неоднократно переспрашивать."
+      },
+      {
+        "criterion_id": "closure",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": false,
+        "system_rationale": "Оператор не подвел итог и не попрощался.",
+        "assistant_rationale": "Оператор сам закрывает чат без итога, предложения помощи и прощания."
+      },
+      {
+        "criterion_id": "critical",
+        "system_status": "needs_review",
+        "system_value": null,
+        "assistant_value": true,
+        "system_rationale": "Не было выявлено грубых ошибок.",
+        "assistant_rationale": "Сообщены сведения об ограничении конкретного счёта до идентификации; трактуется как раскрытие конфиденциальных данных."
+      }
+    ]
+  },
+  {
+    "conversation_id": "p2-kz-001",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 88.13,
+      "critical_flag": false
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-kz-002",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 12.5,
+      "critical_flag": false
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-kz-003",
+    "system_status": "no_saved_result",
+    "assistant_score": {
+      "final_score": 70.0,
+      "critical_flag": true
+    },
+    "differences": null
+  },
+  {
+    "conversation_id": "p2-kz-004",
+    "system_status": "ok",
+    "system_evaluation_id": "9037e027-b38e-419c-b526-727db3d12738",
+    "system_engine": "ollama:qwen3:8b",
+    "system_score": 88.75,
+    "assistant_score": {
+      "final_score": 100.0,
+      "critical_flag": false
+    },
+    "differences": [
+      {
+        "criterion_id": "discovery",
+        "system_status": "not_applicable",
+        "system_value": null,
+        "assistant_value": true,
+        "system_rationale": "Данных для ответа хватало с самого начала.",
+        "assistant_rationale": "Запрос неизвестен; оператор уместно спрашивает, чем помочь, до ухода клиента."
+      },
+      {
+        "criterion_id": "dialogue",
+        "system_status": "scored",
+        "system_value": 7,
+        "assistant_value": 10,
+        "system_rationale": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+        "assistant_rationale": "Ответ ясен и последователен; уход клиента не доказывает сбой оператора."
+      }
+    ]
+  },
+  {
+    "conversation_id": "p2-en-001",
+    "system_status": "ok",
+    "system_evaluation_id": "77e6131a-0621-4f63-8d27-c47a63e8a409",
+    "system_engine": "ollama:qwen3:8b",
+    "system_score": 92.31,
+    "assistant_score": {
+      "final_score": 88.75,
+      "critical_flag": false
+    },
+    "differences": [
+      {
+        "criterion_id": "discovery",
+        "system_status": "not_applicable",
+        "system_value": null,
+        "assistant_value": true,
+        "system_rationale": "Данных для ответа хватало с самого начала.",
+        "assistant_rationale": "Оператор уточнил используемый сайт, которого не было в исходном запросе."
+      },
+      {
+        "criterion_id": "consultation",
+        "system_status": "scored",
+        "system_value": 15,
+        "assistant_value": 20,
+        "system_rationale": "Основной вопрос решён, пропущена второстепенная деталь.",
+        "assistant_rationale": "После исправления назван адрес входа и приложение; клиент подтвердил результат."
+      },
+      {
+        "criterion_id": "dialogue",
+        "system_status": "scored",
+        "system_value": 10,
+        "assistant_value": 4,
+        "system_rationale": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+        "assistant_rationale": "Фраза про другой сайт вынуждает клиента переспрашивать; исправление не отменяет этот сбой."
+      }
+    ]
+  },
+  {
+    "conversation_id": "p2-en-002",
+    "system_status": "ok",
+    "system_evaluation_id": "1302676e-1362-4c3d-aa8b-74fe130f8e55",
+    "system_engine": "ollama:qwen3:8b",
+    "system_score": 100.0,
+    "assistant_score": {
+      "final_score": 100.0,
+      "critical_flag": false
+    },
+    "differences": [
+      {
+        "criterion_id": "discovery",
+        "system_status": "pass",
+        "system_value": true,
+        "assistant_value": null,
+        "system_rationale": "Оператор учёл известные детали и уточнил недостающее до ответа.",
+        "assistant_rationale": "Мобильное приложение, нужный год и оба вопроса известны заранее; уточнять недостающее не требовалось."
+      }
+    ]
+  }
+]

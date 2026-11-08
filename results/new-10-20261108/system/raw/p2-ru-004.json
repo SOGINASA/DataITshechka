@@ -1,0 +1,880 @@
+{
+  "conversation": {
+    "channel": "chat",
+    "created_at": "2026-11-08T06:11:25.520948Z",
+    "external_id": "p2-ru-004",
+    "id": "d361cb94-3083-4e69-9498-ac379e670baa",
+    "language": "ru",
+    "message_count": 15,
+    "operator_name": "Оператор",
+    "recording_url": null,
+    "title": "Загруженный диалог"
+  },
+  "evaluations_response": {
+    "items": [
+      {
+        "applicable_weight": 100.0,
+        "checklist_id": "27c7918b-3cd2-459c-b3fc-0aca981d5306",
+        "conversation_id": "d361cb94-3083-4e69-9498-ac379e670baa",
+        "counts": {
+          "fail": 0,
+          "needs_review": 8,
+          "not_applicable": 0,
+          "pass": 0,
+          "scored": 0
+        },
+        "coverage": 0.0,
+        "created_at": "2026-11-08T06:44:29.247696Z",
+        "critical_failures": [],
+        "engine": "ml2:qwen3:8b",
+        "final_score": null,
+        "gross_error_detected": null,
+        "id": "9ff7ded5-f321-476d-b530-2320bc2b36a4",
+        "needs_review": true,
+        "original_results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 10.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              }
+            ],
+            "explanation": "Оператор не поздоровался в первом ответе, а начал с ответа на запрос клиента.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "10",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Установление контакта",
+            "value": null,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              }
+            ],
+            "explanation": "Оператор не уточнял недостающие детали, а сразу предоставил информацию.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "10",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Выявление потребности",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 20.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "13",
+                "quote": "Я ещё не подтверждал личность. Где в приложении смотреть?",
+                "start_ms": 209000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Проверка личности не подтверждалась до раскрытия данных.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 20.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "На вашем счёте действует ограничение на вывод. Детали смотрите в приложении.",
+                "start_ms": 174000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Ответ не был полным и не содержал официального источника информации.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Корректная и полная консультация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "1",
+                "quote": "Опять не получается вывести деньги. Проверьте, что случилось со счётом.",
+                "start_ms": 0
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "13",
+                "quote": "Я ещё не подтверждал личность. Где в приложении смотреть?",
+                "start_ms": 209000
+              }
+            ],
+            "explanation": "Оператор не отреагировал на выражение недовольства клиента.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "На вашем счёте действует ограничение на вывод. Детали смотрите в приложении.",
+                "start_ms": 174000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Ответы были неясными и несвязными, не было предупреждения об ожидании.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 5.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "15",
+                "quote": "Оператор закрыл чат.",
+                "start_ms": 273000
+              }
+            ],
+            "explanation": "Оператор не подвел итог и не попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "12"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Завершение",
+            "value": null,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": null,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Не было выявлено грубых ошибок.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Грубые ошибки",
+            "value": null,
+            "weight": 0
+          }
+        ],
+        "original_summary": {
+          "applicable_weight": 100.0,
+          "counts": {
+            "fail": 0,
+            "needs_review": 8,
+            "not_applicable": 0,
+            "pass": 0,
+            "scored": 0
+          },
+          "coverage": 0.0,
+          "critical_failures": [],
+          "final_score": null,
+          "gross_error_detected": null,
+          "needs_review": true,
+          "score": null,
+          "score_is_partial": true,
+          "sections": [
+            {
+              "applicable_weight": 25.0,
+              "coverage": 0.0,
+              "final_score": null,
+              "name": "Начало и понимание запроса",
+              "score": null,
+              "score_is_partial": true
+            },
+            {
+              "applicable_weight": 40.0,
+              "coverage": 0.0,
+              "final_score": null,
+              "name": "Безопасность и решение",
+              "score": null,
+              "score_is_partial": true
+            },
+            {
+              "applicable_weight": 35.0,
+              "coverage": 0.0,
+              "final_score": null,
+              "name": "Ведение и завершение диалога",
+              "score": null,
+              "score_is_partial": true
+            },
+            {
+              "applicable_weight": 0.0,
+              "coverage": null,
+              "final_score": null,
+              "name": "Грубые нарушения",
+              "score": null,
+              "score_is_partial": false
+            }
+          ]
+        },
+        "results": [
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "contact",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 10.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              }
+            ],
+            "explanation": "Оператор не поздоровался в первом ответе, а начал с ответа на запрос клиента.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "10",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Установление контакта",
+            "value": null,
+            "weight": 10
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "needs",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              }
+            ],
+            "explanation": "Оператор не уточнял недостающие детали, а сразу предоставил информацию.",
+            "na_condition": "Данных для ответа хватало с самого начала.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "10",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Начало и понимание запроса",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Выявление потребности",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "identification",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 20.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "13",
+                "quote": "Я ещё не подтверждал личность. Где в приложении смотреть?",
+                "start_ms": 209000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Проверка личности не подтверждалась до раскрытия данных.",
+            "na_condition": "Запрос не требовал идентификации.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Идентификация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": true,
+            "answer_type": "scale",
+            "criterion_id": "consultation",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 20.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "На вашем счёте действует ограничение на вывод. Детали смотрите в приложении.",
+                "start_ms": 174000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Ответ не был полным и не содержал официального источника информации.",
+            "na_condition": "Чат закончился до того, как клиент сформулировал запрос.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Ответа по существу нет или ключевая рекомендация ошибочна.",
+                "value": 0
+              },
+              {
+                "label": "Есть общая подсказка, но клиенту всё ещё непонятно, как действовать.",
+                "value": 5
+              },
+              {
+                "label": "Часть запроса закрыта, существенный вопрос остался открытым.",
+                "value": 10
+              },
+              {
+                "label": "Основной вопрос решён, пропущена второстепенная деталь.",
+                "value": 15
+              },
+              {
+                "label": "Все существенные вопросы закрыты или дан корректный следующий шаг.",
+                "value": 20
+              }
+            ],
+            "section": "Безопасность и решение",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Корректная и полная консультация",
+            "value": null,
+            "weight": 20
+          },
+          {
+            "allow_na": false,
+            "answer_type": "binary",
+            "criterion_id": "empathy",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "1",
+                "quote": "Опять не получается вывести деньги. Проверьте, что случилось со счётом.",
+                "start_ms": 0
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "13",
+                "quote": "Я ещё не подтверждал личность. Где в приложении смотреть?",
+                "start_ms": 209000
+              }
+            ],
+            "explanation": "Оператор не отреагировал на выражение недовольства клиента.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Эмпатия и клиентоориентированность",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": false,
+            "answer_type": "scale",
+            "criterion_id": "dialogue_management",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 15.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "10",
+                "quote": "Сейчас. Там оно у вас по счёту стоит, поэтому через тот раздел опять.",
+                "start_ms": 143000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "12",
+                "quote": "На вашем счёте действует ограничение на вывод. Детали смотрите в приложении.",
+                "start_ms": 174000
+              },
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "14",
+                "quote": "В разделе вывода.",
+                "start_ms": 257000
+              }
+            ],
+            "explanation": "Ответы были неясными и несвязными, не было предупреждения об ожидании.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [
+              {
+                "label": "Из-за бессвязных или противоречивых реплик ход диалога непонятен.",
+                "value": 0
+              },
+              {
+                "label": "Клиенту приходится переспрашивать из-за формулировок или порядка ответов.",
+                "value": 4
+              },
+              {
+                "label": "Один заметный сбой, но клиент может понять ответ и продолжить.",
+                "value": 7
+              },
+              {
+                "label": "Ответы ясные и связные. Если было явное ожидание, оператор предупредил.",
+                "value": 10
+              }
+            ],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Управление диалогом, скорость и грамотность",
+            "value": null,
+            "weight": 15
+          },
+          {
+            "allow_na": true,
+            "answer_type": "binary",
+            "criterion_id": "closing",
+            "critical": false,
+            "effective_points": null,
+            "effective_weight": 5.0,
+            "evidence": [
+              {
+                "end_ms": null,
+                "matched_terms": [],
+                "message_id": "15",
+                "quote": "Оператор закрыл чат.",
+                "start_ms": 273000
+              }
+            ],
+            "explanation": "Оператор не подвел итог и не попрощался.",
+            "na_condition": "Чат оборвался до возможности его завершить.",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "12"
+            },
+            "scale": [],
+            "section": "Ведение и завершение диалога",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Завершение",
+            "value": null,
+            "weight": 5
+          },
+          {
+            "allow_na": false,
+            "answer_type": "flag",
+            "criterion_id": "gross_errors",
+            "critical": true,
+            "effective_points": null,
+            "effective_weight": 0.0,
+            "evidence": [],
+            "explanation": "Не было выявлено грубых ошибок.",
+            "na_condition": "",
+            "points": null,
+            "require_evidence": true,
+            "reviewed_range": {
+              "end_message_id": "15",
+              "start_message_id": "1"
+            },
+            "scale": [],
+            "section": "Грубые нарушения",
+            "source": "model",
+            "status": "needs_review",
+            "title": "Грубые ошибки",
+            "value": null,
+            "weight": 0
+          }
+        ],
+        "revision": 1,
+        "run_metadata": {
+          "adapter_version": "ml2-api-1-range-fix",
+          "attempts": [
+            {
+              "attempt": 1,
+              "usage": {
+                "eval_count": 581,
+                "load_duration": 186263792,
+                "prompt_eval_count": 2684,
+                "total_duration": 148043105250
+              }
+            }
+          ],
+          "audio_features_available": false,
+          "calls": 1,
+          "conversation_hash": "86aa398d9d4a5cb99861c8c9fadb9cd18f30c748966aac5248319fdf75246688",
+          "criterion_diagnostics": {
+            "closing": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "consultation": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "contact": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "dialogue_management": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "empathy": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "gross_errors": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "identification": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            },
+            "needs": {
+              "knowledge_refs": [],
+              "knowledge_status": "not_needed"
+            }
+          },
+          "elapsed_seconds": 148.291,
+          "eval_count": 581,
+          "evaluator": "ml2",
+          "input_basis": "transcript",
+          "knowledge_as_of": null,
+          "knowledge_hash": "3359e0c8b151e6f5259af2c7c90ef1db6fd7f18aa32536bdabd874b3e5d423e7",
+          "knowledge_version": "none",
+          "model": "qwen3:8b",
+          "model_digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+          "num_ctx": 32768,
+          "num_predict": 2048,
+          "original_rubric_hash": "45b3ff5e13e353b947c9ad13200617a527484e811fd650591f7ea84ced0f8432",
+          "prompt_eval_count": 2684,
+          "prompt_hash": "3f83c700b9076c12ea3479bfbeb77b8b0b749bdc5fcf4027bfb815dafb33b438",
+          "prompt_version": "ml2-cqa-10",
+          "retrieved_ids": [],
+          "rubric_hash": "6a44cc52448d09d7df9230306a68b7b4746189ff2384eb31ab7501f3a2ca6ec9",
+          "rubric_version": "official-1",
+          "runtime_hotfix": {
+            "adapter_sha256": "802095923ea8371a795bcbcbe977c98b0200b4167ce04a703aa0856d14c832fd",
+            "base_source_revision": "5f44543894192f2e38f0b7014073cc4a308771ae",
+            "base_source_tree": "d4b04897d5a1ddb000ff3435bf40cf311c5d4692",
+            "description": "Criterion ranges in prompt and evidence enums; adapter preserves enums.",
+            "id": "20261108-evidence-ranges"
+          },
+          "sampling": {
+            "min_p": 0.0,
+            "seed": 7,
+            "temperature": 0.0,
+            "top_k": 20,
+            "top_p": 0.95
+          },
+          "server_version": "0.32.14",
+          "source_revision": "5f44543894192f2e38f0b7014073cc4a308771ae",
+          "source_tree": "d4b04897d5a1ddb000ff3435bf40cf311c5d4692",
+          "think": false,
+          "total_duration": 148043105250,
+          "wire_schema_hash": "ab69398c4e965f07efdbd51d5eb902096f2c6720a1efa6827e76664698e24c38"
+        },
+        "score": null,
+        "score_is_partial": true,
+        "sections": [
+          {
+            "applicable_weight": 25.0,
+            "coverage": 0.0,
+            "final_score": null,
+            "name": "Начало и понимание запроса",
+            "score": null,
+            "score_is_partial": true
+          },
+          {
+            "applicable_weight": 40.0,
+            "coverage": 0.0,
+            "final_score": null,
+            "name": "Безопасность и решение",
+            "score": null,
+            "score_is_partial": true
+          },
+          {
+            "applicable_weight": 35.0,
+            "coverage": 0.0,
+            "final_score": null,
+            "name": "Ведение и завершение диалога",
+            "score": null,
+            "score_is_partial": true
+          },
+          {
+            "applicable_weight": 0.0,
+            "coverage": null,
+            "final_score": null,
+            "name": "Грубые нарушения",
+            "score": null,
+            "score_is_partial": false
+          }
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pages": 1,
+      "per_page": 100,
+      "total": 1
+    }
+  }
+}

@@ -7,8 +7,9 @@ Return exactly {"results": {criterion_id: assessment, ...}} with answer, explana
 knowledge_status and knowledge_refs for every criterion. Give one concise Russian sentence (max 20 words).
 Use true/false for binary or flag, an exact configured number for scales, N/A only when allowed, or
 needs_review when evidence or a material fact is insufficient. Do not emit status, value, scores or
-reviewed_range; the server computes them. Cite only real message IDs and keep evidence within the assigned
-range. Positive/scale decisions cite supporting operator behavior; violations cite the violating turn.
+reviewed_range; the server computes them. Each criterion includes its assigned reviewed_range in the input.
+Cite only real message IDs within that inclusive range, using transcript order, not numeric ID order.
+Positive/scale decisions cite supporting operator behavior; violations cite the violating turn.
 For missing actions, do not invent evidence. A positive closing cites the final operator farewell and any
 recap/help offer. For gross_errors=false, inspect the full conversation. For calls, assess transcript only.
 
